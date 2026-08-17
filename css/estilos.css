@@ -1,0 +1,528 @@
+/* =========================================================
+   ISIDRO GONZÁLEZ — Portfolio
+   Sistema visual: fondo crema, tipografía display enorme,
+   texto de sistema pequeño en mayúsculas, cero adornos.
+   ========================================================= */
+
+/* ---------- Tokens ---------- */
+:root {
+  --bg: #fffbf4;
+  --ink: #111111;
+  --accent: #fa4411;
+  --muted: rgba(17, 17, 17, 0.55);
+  --linea: rgba(17, 17, 17, 0.12);
+
+  /* Una sola variable manda todo el espaciado del sitio */
+  --grid-space: 4vw;
+
+  --font-display: "Playfair Display", "Didot", "Bodoni 72", "Times New Roman", serif;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.83, 0, 0.17, 1);
+}
+
+@media (min-width: 992px) {
+  :root { --grid-space: 6vw; }
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; border: 0 solid; }
+html, body { margin: 0; padding: 0; }
+html {
+  overflow: hidden;               /* el scroll es virtual, lo gestiona JS */
+  -webkit-text-size-adjust: 100%;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar { display: none; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  font-kerning: normal;
+  overscroll-behavior: none;
+}
+
+a { color: inherit; text-decoration: none; }
+img, video { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; background: none; cursor: pointer; }
+
+::selection { background: var(--ink); color: var(--bg); text-shadow: none; }
+
+:focus-visible {
+  outline: 2px dashed currentColor;
+  outline-offset: 3px;
+}
+
+/* ---------- Escala tipográfica ---------- */
+.type-xl {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 15vw;
+  line-height: 0.92;
+  letter-spacing: -0.015em;
+  margin-left: -0.05em;         /* corrección óptica del borde izquierdo */
+  hyphens: auto;
+}
+@media (min-width: 992px) {
+  .type-xl { font-size: 11.4vw; }
+}
+
+.type-large { font-size: 18px; line-height: 1.5; }
+@media (min-width: 992px) { .type-large { font-size: 24px; } }
+
+.type-base { font-size: 13px; line-height: 1.5; }
+@media (min-width: 992px) { .type-base { font-size: 15px; } }
+
+.type-small {
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+@media (min-width: 992px) { .type-small { font-size: 12px; } }
+
+/* ---------- Botón píldora ---------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.85em 1.5em;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition: transform 0.5s var(--ease-out), opacity 0.3s linear;
+}
+@media (min-width: 992px) { .pill { font-size: 11px; } }
+.pill:hover { transform: scale(1.06); }
+.pill--ghost {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--linea);
+}
+
+/* =========================================================
+   Escena del scroll infinito
+   ========================================================= */
+.escena {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.pista { position: absolute; top: 0; left: 0; width: 100%; }
+
+/* Cada clon del ciclo se apila absolutamente; JS los posiciona */
+.ciclo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 0 var(--grid-space);
+}
+
+/* --- Rejilla de 3 columnas --- */
+.rejilla {
+  display: grid;
+  /* --cols lo fija JS (2 o 3) según cuántas piezas haya, para que no
+     aparezcan huecos grandes cuando el número no es múltiplo de 3. */
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: var(--grid-space);
+  align-items: start;
+}
+/* En pantallas pequeñas mandan estos saltos, pase lo que pase con --cols */
+@media (max-width: 900px) { .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+@media (max-width: 600px) { .rejilla { grid-template-columns: minmax(0, 1fr) !important; } }
+
+.columna { display: flex; flex-direction: column; gap: 14vh; }
+
+/* --- Pieza de trabajo --- */
+.pieza { display: block; cursor: pointer; }
+
+.marco {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: var(--ar, 4 / 5);
+  background: rgba(17, 17, 17, 0.05);
+}
+
+.marco .media {
+  position: absolute;
+  top: -4%;
+  left: 0;
+  width: 100%;
+  height: 108%;               /* margen justo para el paralaje: ampliar más
+                                 estropea la nitidez del vídeo */
+  object-fit: cover;
+  will-change: transform;
+}
+
+/* Aparición: la pieza entra desde abajo con opacidad */
+.pieza {
+  opacity: 0;
+  transform: translate3d(0, 40px, 0);
+  transition: opacity 0.25s linear, transform 1.25s var(--ease-out);
+}
+.pieza.visible { opacity: 1; transform: none; }
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  margin-top: 10px;
+}
+.meta .titulo { font-weight: 600; }
+.meta .cat { color: var(--muted); }
+
+/* --- Bloque central con el nombre --- */
+.bloque-nombre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 78vh;
+  padding: 12vh 0;
+}
+.bloque-nombre .type-xl { margin: 0 0 0.18em; color: var(--accent); perspective: 500px; }
+
+/* Letras del nombre: empiezan invisibles, JS las anima al entrar en
+   pantalla (ver escribirTitulo en app.js). Si JS no corriera, mejor que se
+   queden invisibles a que aparezcan sin animar de golpe. */
+.letra { display: inline-block; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .letra { opacity: 1; }
+}
+.bloque-nombre .lema {
+  max-width: 30ch;
+  margin: 0 0 26px;
+  text-wrap: balance;
+}
+.bloque-nombre .acciones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+/* En páginas de categoría el título va en negro */
+.bloque-nombre.categoria .type-xl { color: var(--ink); }
+
+/* =========================================================
+   Interfaz flotante
+   ========================================================= */
+.ui-inferior {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  overflow: hidden;
+  max-width: min(92vw, 900px);
+  transition: opacity 0.4s linear, transform 0.6s var(--ease-out);
+}
+.filtros button,
+.filtros a {
+  padding: 0.7em 1.15em;
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: inherit;
+  transition: background 0.3s var(--ease-out), opacity 0.3s linear;
+  opacity: 0.72;
+}
+.filtros button:hover,
+.filtros a:hover { opacity: 1; }
+.filtros button.activo,
+.filtros a.activo {
+  background: var(--bg);
+  color: var(--ink);
+  opacity: 1;
+}
+
+/* Estado cerrado: sólo se ve la píldora FILTRAR */
+.ui-inferior:not(.abierta) .filtros {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px) scale(0.96);
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 12px;
+}
+.ui-inferior.abierta .boton-filtro .txt-abrir { display: none; }
+.ui-inferior:not(.abierta) .boton-filtro .txt-cerrar { display: none; }
+
+.boton-filtro { z-index: 1; }
+
+/* Enlace superior de vuelta */
+.ui-superior {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+/* Indicador de scroll */
+.hint {
+  position: fixed;
+  right: var(--grid-space);
+  bottom: 28px;
+  z-index: 40;
+  color: var(--muted);
+  pointer-events: none;
+  transition: opacity 0.6s linear;
+}
+@media (max-width: 900px) { .hint { display: none; } }
+
+/* =========================================================
+   Reproductor a pantalla completa
+   ========================================================= */
+.visor {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 8, 6, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--grid-space);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s linear;
+}
+.visor.abierto { opacity: 1; pointer-events: auto; }
+.visor video {
+  max-width: 100%;
+  max-height: 82vh;
+  background: #000;
+}
+.visor .cerrar {
+  position: absolute;
+  top: 24px;
+  right: var(--grid-space);
+  color: #fff;
+}
+.visor .pie {
+  position: absolute;
+  bottom: 24px;
+  left: var(--grid-space);
+  color: #fff;
+}
+
+/* =========================================================
+   Páginas secundarias (Sobre mí / Contacto)
+   ========================================================= */
+.pagina {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.pagina::-webkit-scrollbar { display: none; }
+
+.pagina-inner {
+  padding: calc(var(--grid-space) * 1.6) var(--grid-space) calc(var(--grid-space) * 2);
+  min-height: 100%;
+}
+
+.cabecera-pagina { text-align: center; margin-bottom: 12vh; }
+.cabecera-pagina h1 { margin: 0; color: var(--accent); }
+
+.columnas-texto {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--grid-space);
+  align-items: start;
+}
+.col-texto { grid-column: 3 / span 6; }
+.col-lateral { grid-column: 9 / span 3; }
+@media (max-width: 900px) {
+  .col-texto, .col-lateral { grid-column: 1 / -1; }
+  .col-lateral { margin-top: 8vh; }
+}
+
+.col-texto p { margin: 0 0 1.2em; }
+.col-texto p a { text-decoration: underline; }
+.col-texto p a:hover { text-decoration: none; }
+
+.bloque-datos { border-top: 1px solid var(--linea); padding-top: 14px; margin-bottom: 34px; }
+.bloque-datos h2 { margin: 0 0 10px; font-size: inherit; font-weight: 400; color: var(--muted); }
+.bloque-datos ul { list-style: none; margin: 0; padding: 0; }
+.bloque-datos li { padding: 3px 0; }
+.bloque-datos a:hover { text-decoration: underline; }
+
+.retrato { margin-bottom: 34px; }
+.retrato img { width: 100%; }
+
+.pie-pagina {
+  margin-top: 16vh;
+  padding-top: 16px;
+  border-top: 1px solid var(--linea);
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+/* Formulario de contacto */
+.formulario { display: grid; gap: 18px; max-width: 520px; }
+.campo { display: grid; gap: 6px; }
+.campo label { color: var(--muted); }
+.campo input,
+.campo textarea {
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  border-bottom: 1px solid var(--linea);
+  font-family: inherit;
+  font-size: 15px;
+  color: inherit;
+  border-radius: 0;
+}
+.campo textarea { resize: vertical; min-height: 110px; }
+.campo input:focus,
+.campo textarea:focus { outline: none; border-bottom-color: var(--ink); }
+
+/* ---------- Carga inicial ---------- */
+.cortina {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  cursor: progress;
+  transition: opacity 0.6s linear;
+}
+.cortina.fuera { opacity: 0; pointer-events: none; }
+
+/* ---------- Accesibilidad ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .pieza { opacity: 1; transform: none; }
+}
+
+
+/* =========================================================
+   Galerías de scroll normal (categorías y fotos)
+   ========================================================= */
+.pagina-inner.sin-lados { padding-left: 0; padding-right: 0; }
+.pagina-inner.sin-lados > .cabecera-galeria,
+.pagina-inner.sin-lados > .galeria,
+.pagina-inner.sin-lados > .pie-pagina { padding-left: var(--grid-space); padding-right: var(--grid-space); }
+
+.cabecera-galeria {
+  text-align: center;
+  padding-top: 6vh;
+  margin-bottom: 14vh;
+}
+.cabecera-galeria h1 { margin: 0; color: var(--accent); }
+.cabecera-galeria h1.categoria { color: var(--ink); }
+
+.galeria { padding-bottom: 6vh; }
+
+.vacio {
+  text-align: center;
+  color: var(--muted);
+  padding: 12vh 0 20vh;
+}
+
+.pagina-inner.sin-lados > .pie-pagina { margin-top: 12vh; }
+
+/* El visor sirve para vídeo y para foto */
+.visor img { max-width: 100%; max-height: 82vh; }
+
+/* En las páginas con scroll normal el enlace de vuelta acompaña al contenido
+   en lugar de quedarse fijo tapando los vídeos. */
+.pagina .ui-superior {
+  position: static;
+  transform: none;
+  display: block;
+  text-align: center;
+  margin-bottom: 2vh;
+}
+
+
+/* --- Piezas apaisadas: rompen la rejilla y ocupan dos tercios --- */
+.fila-ancha {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--grid-space);
+  margin: 13vh 0;
+}
+.fila-ancha.izq .pieza { grid-column: 1 / span 2; }
+.fila-ancha.der .pieza { grid-column: 2 / span 2; }
+
+@media (max-width: 900px) {
+  .fila-ancha { grid-template-columns: minmax(0, 1fr); }
+  .fila-ancha .pieza { grid-column: 1 / -1; }
+}
+
+/* Dos rejillas seguidas necesitan aire entre ellas */
+.rejilla + .rejilla { margin-top: 13vh; }
+
+
+/* Estados del reproductor: cargando y error */
+.visor .estado {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(80vw, 460px);
+  text-align: center;
+  color: #fff;
+  display: none;
+}
+.visor.cargando .estado.carga,
+.visor.fallo .estado.error { display: block; }
+.visor.cargando video,
+.visor.fallo video { visibility: hidden; }
+
+.visor .estado .giro {
+  width: 26px;
+  height: 26px;
+  margin: 0 auto 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.visor .estado .detalle {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  word-break: break-all;
+}

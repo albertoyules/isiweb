@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico — Isidro González</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  :root { --bg:#fffbf4; --ink:#111; --ok:#0a7d32; --mal:#c81e1e; --gris:rgba(17,17,17,.55); }
+  body { margin:0; padding:32px; background:var(--bg); color:var(--ink);
+         font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  h1 { font:600 20px/1.2 system-ui, sans-serif; margin:0 0 4px; }
+  p.sub { color:var(--gris); margin:0 0 24px; font-family:system-ui, sans-serif; }
+  table { border-collapse:collapse; width:100%; max-width:1100px; }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid rgba(17,17,17,.1); vertical-align:top; }
+  th { font:600 11px/1.2 system-ui, sans-serif; text-transform:uppercase;
+       letter-spacing:.05em; color:var(--gris); }
+  .ok { color:var(--ok); } .mal { color:var(--mal); font-weight:600; }
+  .ruta { color:var(--gris); font-size:12px; word-break:break-all; }
+  #resumen { margin:24px 0; padding:16px 20px; border-radius:12px;
+             background:rgba(17,17,17,.05); font:15px/1.5 system-ui, sans-serif; max-width:1100px; }
+  button { font:600 12px/1 system-ui, sans-serif; padding:12px 20px; border-radius:999px;
+           background:var(--ink); color:var(--bg); border:0; cursor:pointer; }
+  #copia { width:100%; max-width:1100px; height:200px; margin-top:12px; font:12px/1.4 ui-monospace, monospace; }
+</style>
+</head>
+<body>
+
+<h1>Diagnóstico de medios</h1>
+<p class="sub">Comprueba, uno a uno, que cada archivo existe y que este navegador
+puede reproducirlo. Déjalo terminar y pásame el resultado.</p>
+
+<div id="resumen">Comprobando…</div>
+<table>
+  <thead><tr><th>Vídeo</th><th>Previa (rejilla)</th><th>Completo (reproductor)</th><th>Póster</th></tr></thead>
+  <tbody id="filas"></tbody>
+</table>
+
+<p><button onclick="copiar()">Copiar informe</button></p>
+<textarea id="copia" readonly></textarea>
+
+<script src="js/config.js"></script>
+<script src="js/datos.js"></script>
+<script src="js/rejilla.js"></script>
+<script>
+const informe = [];
+
+// ¿Existe el archivo? Pedimos sólo el primer byte, no hace falta más.
+async function existe(url) {
+  try {
+    const r = await fetch(url, { headers: { Range: "bytes=0-1" } });
+    return r.ok ? { ok: true, http: r.status } : { ok: false, http: r.status };
+  } catch (e) {
+    return { ok: false, http: "sin respuesta (" + e.message + ")" };
+  }
+}
+
+// ¿Puede este navegador decodificarlo de verdad?
+function reproducible(url) {
+  return new Promise((resolve) => {
+    const v = document.createElement("video");
+    v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = url;
+    const fin = (r) => { v.removeAttribute("src"); v.load(); resolve(r); };
+    const limite = setTimeout(() => fin({ ok: false, nota: "no cargó en 20 s" }), 20000);
+    v.addEventListener("loadeddata", () => {
+      clearTimeout(limite);
+      v.play().then(() => setTimeout(() => {
+        fin(v.currentTime > 0
+          ? { ok: true, nota: v.videoWidth + "×" + v.videoHeight }
+          : { ok: false, nota: "carga pero no avanza" });
+      }, 900)).catch((e) => { clearTimeout(limite); fin({ ok: false, nota: "play() rechazado: " + e.name }); });
+    });
+    v.addEventListener("error", () => {
+      clearTimeout(limite);
+      const c = v.error ? v.error.code : 0;
+      fin({ ok: false, nota: ["", "abortado", "error de red", "NO SE PUEDE DECODIFICAR", "formato no soportado"][c] || "error " + c });
+    });
+  });
+}
+
+function celda(r) {
+  return r.ok
+    ? `<span class="ok">✓ ${r.nota || r.http}</span>`
+    : `<span class="mal">✗ ${r.nota || r.http}</span>`;
+}
+
+(async function () {
+  const filas = document.getElementById("filas");
+  let fallos = 0;
+
+  for (const p of PROYECTOS) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><strong>${p.titulo}</strong><br><span class="ruta">${p.categoria}</span></td>
+                    <td>…</td><td>…</td><td>…</td>`;
+    filas.appendChild(tr);
+
+    const uPrev = medio(p.preview || p.video);
+    const uComp = medio(p.video);
+    const uPost = medio(p.poster);
+
+    const [ePrev, eComp, ePost] = await Promise.all([existe(uPrev), existe(uComp), existe(uPost)]);
+    const rPrev = ePrev.ok ? await reproducible(uPrev) : ePrev;
+    const rComp = eComp.ok ? await reproducible(uComp) : eComp;
+
+    tr.children[1].innerHTML = celda(rPrev) + `<br><span class="ruta">${decodeURIComponent(uPrev)}</span>`;
+    tr.children[2].innerHTML = celda(rComp) + `<br><span class="ruta">${decodeURIComponent(uComp)}</span>`;
+    tr.children[3].innerHTML = celda(ePost);
+
+    if (!rPrev.ok || !rComp.ok || !ePost.ok) fallos++;
+    informe.push(`${p.categoria}/${p.titulo}
+   previa:   ${rPrev.ok ? "OK " + (rPrev.nota||"") : "FALLA → " + (rPrev.nota || rPrev.http)}
+   completo: ${rComp.ok ? "OK " + (rComp.nota||"") : "FALLA → " + (rComp.nota || rComp.http)}
+   poster:   ${ePost.ok ? "OK" : "FALLA → " + ePost.http}`);
+  }
+
+  document.getElementById("resumen").innerHTML = fallos
+    ? `<strong class="mal">${fallos} de ${PROYECTOS.length} vídeos dan problemas en este navegador.</strong>`
+    : `<strong class="ok">Los ${PROYECTOS.length} vídeos funcionan correctamente en este navegador.</strong>`;
+
+  document.getElementById("copia").value =
+    `Navegador: ${navigator.userAgent}\nVersión de medios: ${typeof MEDIA_V !== "undefined" ? MEDIA_V : "(ninguna)"}\nOrigen: ${location.href}\nCDN: ${CONFIG.cdn || "(local)"}\n\n` +
+    informe.join("\n\n");
+})();
+
+function copiar() {
+  const t = document.getElementById("copia");
+  t.select(); document.execCommand("copy");
+}
+</script>
+</body>
+</html>

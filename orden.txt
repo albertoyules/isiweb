@@ -1,0 +1,27 @@
+# Orden manual de los vídeos en la web.
+#
+# Una ruta por línea (dentro de /videos), de arriba abajo tal como
+# quieres que aparezcan. Para reordenar, mueve las líneas de sitio y
+# vuelve a ejecutar:  node generar-datos.mjs
+#
+# Los vídeos que no aparezcan aquí (por ejemplo, si añades uno nuevo)
+# se colocan al final automáticamente.
+#
+# Esta plantilla se generó sola con el orden que había ahora mismo.
+# Bórrala si prefieres volver al barajado automático.
+
+DEPORTES/Embassy.mp4
+PUBLICIDAD/Twojeys.mp4
+NEGOCIOS/Pepe Peluqueria.mp4
+DEPORTES/MAN WORLD.mp4
+NEGOCIOS/Reel chck.mp4
+PUBLICIDAD/Terraza Chinitas Centro.mp4
+PUBLICIDAD/Benajarafe.mp4
+DEPORTES/Training 2.mp4
+DEPORTES/Entreno Mat.mp4
+DEPORTES/Asissport video 4.mp4
+DEPORTES/Evento Fisio.mp4
+PUBLICIDAD/Luxury Villa.MOV
+DEPORTES/Padel.mp4
+DEPORTES/lorena.mp4
+NEGOCIOS/Terraza Chinitas Bellavista.mp4

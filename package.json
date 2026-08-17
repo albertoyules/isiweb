@@ -1,0 +1,12 @@
+{
+  "name": "isidro-gonzalez-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfolio de vídeo con scroll infinito en bucle",
+  "scripts": {
+    "videos": "node generar-datos.mjs",
+    "videos:optimizar": "node generar-datos.mjs --optimizar",
+    "dev": "node servidor.mjs",
+    "r2": "bash subir-r2.sh"
+  }
+}

@@ -1,0 +1,9 @@
+.DS_Store
+
+# Originales pesados: no hace falta subirlos, la web usa las copias
+# ligeras (videos-web/, fotos-web/, previews/, posters/) que ya
+# apuntan js/datos.js. Ver LEEME.md, sección "Publicarlo".
+videos/
+fotos/
+
+node_modules/

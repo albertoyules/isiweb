@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fotos — Isidro González</title>
+<meta name="description" content="Trabajo fotográfico de Isidro González.">
+<meta name="theme-color" content="#fffbf4">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body data-galeria="fotos">
+
+<div class="pagina">
+  <div class="pagina-inner sin-lados">
+
+    <nav class="ui-superior">
+      <a class="pill" href="index.html">← Vídeos</a>
+    </nav>
+
+    <header class="cabecera-galeria">
+      <h1 class="type-xl" data-titulo>Fotos</h1>
+    </header>
+
+    <div class="galeria"></div>
+
+    <footer class="pie-pagina type-small">
+      <span>© <span data-anio>2026</span> <span data-nombre>Isidro González</span></span>
+      <span>
+        <a href="sobre-mi.html">Sobre mí</a> ·
+        <a href="contacto.html">Contacto</a>
+      </span>
+    </footer>
+
+  </div>
+</div>
+
+<nav class="ui-inferior">
+  <div class="filtros" aria-label="Filtrar por categoría"></div>
+  <button class="pill boton-filtro" aria-label="Abrir filtros">
+    <span class="txt-abrir">Filtrar</span>
+    <span class="txt-cerrar">✕</span>
+  </button>
+</nav>
+
+<div class="visor" role="dialog" aria-modal="true" aria-label="Visor de foto">
+  <video controls playsinline></video>
+  <img alt="">
+  <div class="estado carga">
+    <div class="giro"></div>
+    <p class="type-small">Cargando vídeo…</p>
+  </div>
+  <div class="estado error">
+    <p class="type-large">No se ha podido reproducir este vídeo.</p>
+    <p class="type-small detalle"></p>
+  </div>
+  <button class="cerrar pill" aria-label="Cerrar">✕ Cerrar</button>
+  <p class="pie type-small"></p>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/datos.js"></script>
+<script src="js/rejilla.js"></script>
+<script src="js/galeria.js"></script>
+<script src="js/paginas.js"></script>
+</body>
+</html>

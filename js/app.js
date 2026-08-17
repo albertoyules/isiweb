@@ -1,0 +1,641 @@
+/* =========================================================
+   ISIDRO GONZÁLEZ — Scroll infinito en bucle
+   ---------------------------------------------------------
+   Cómo funciona:
+   1. Se construye un "ciclo": rejilla de piezas + bloque del
+      nombre en el centro + más piezas.
+   2. Se mide su altura H y se clonan tantos ciclos como hagan
+      falta para cubrir la pantalla (mínimo 2).
+   3. El scroll es virtual: JS acumula el desplazamiento y lo
+      suaviza; la posición se aplica con translate3d y módulo H,
+      así el recorrido nunca termina (arriba y abajo).
+   4. Sólo se cargan y reproducen los vídeos visibles; el resto
+      se pausa y, si se alejan mucho, se descargan de memoria.
+   ========================================================= */
+
+(function () {
+  "use strict";
+
+  // ---------- Utilidades ----------
+  const mod = (n, m) => ((n % m) + m) % m;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const slug = (s) =>
+    s.toString().toLowerCase().trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  const esMovil = () => window.matchMedia("(max-width: 600px)").matches;
+  const reduceMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- Estado ----------
+  const escena = document.querySelector(".escena");
+  const pista = document.querySelector(".pista");
+  if (!escena || !pista) return;
+
+  let movido = 0;   // px arrastrados en el gesto actual
+
+  const S = {
+    actual: 0,        // desplazamiento suavizado
+    objetivo: 0,      // desplazamiento real acumulado
+    velocidad: 0,
+    H: 0,             // altura de un ciclo
+    clones: [],
+    piezas: [],       // { el, video, oy, oh, cloneIndex }
+    categoria: "",    // slug activo ("" = todas)
+    vh: window.innerHeight,
+  };
+
+  // ---------- Datos ----------
+  const listaCompleta = (typeof PROYECTOS !== "undefined" && PROYECTOS.length)
+    ? PROYECTOS.slice()
+    : demo();
+
+  function demo() {
+    // Marcadores de posición para poder ver el diseño sin vídeos aún.
+    const cats = ["Bodas", "Publicidad", "Musical", "Corporativo"];
+    return Array.from({ length: 9 }, (_, i) => ({
+      titulo: "Añade tus vídeos a /videos",
+      categoria: cats[i % cats.length],
+      video: "",
+      poster: "",
+      ar: [ "4 / 5", "16 / 9", "3 / 4", "1 / 1" ][i % 4],
+      demo: true,
+    }));
+  }
+
+  const categorias = [...new Set(listaCompleta.map((p) => p.categoria).filter(Boolean))];
+
+  // =========================================================
+  // Construcción del DOM
+  // =========================================================
+  function crearPieza(p, idx) {
+    const a = document.createElement("article");
+    a.className = "pieza";
+    a.dataset.idx = idx;
+
+    const marco = document.createElement("div");
+    marco.className = "marco";
+    marco.style.setProperty("--ar", p.ar || "4 / 5");
+
+    if (p.video) {
+      const v = document.createElement("video");
+      v.className = "media";
+      v.muted = true;
+      v.loop = true;
+      v.playsInline = true;
+      v.setAttribute("playsinline", "");
+      v.setAttribute("webkit-playsinline", "");
+      v.preload = "none";
+      v.disablePictureInPicture = true;
+      if (p.poster) v.poster = medio(p.poster);
+      // En la rejilla va la previa ligera; el archivo bueno se reserva
+      // para el reproductor, que es donde se ve a pantalla completa.
+      v.dataset.src = medio(CONFIG.calidadRejilla === "completa" ? p.video : (p.preview || p.video));
+      marco.appendChild(v);
+    }
+    a.appendChild(marco);
+
+    const meta = document.createElement("div");
+    meta.className = "meta type-small";
+    meta.innerHTML =
+      '<span class="titulo"></span><span class="cat"></span>';
+    meta.querySelector(".titulo").textContent = p.titulo || "";
+    meta.querySelector(".cat").textContent = p.categoria || "";
+    a.appendChild(meta);
+
+    a.addEventListener("click", () => { if (movido > 8) return; abrirVisor(p); });
+    return a;
+  }
+
+  function crearRejilla(items, baseIdx) {
+    const cont = document.createElement("div");
+    cont.appendChild(construirRejilla(items, crearPieza, baseIdx));
+    return cont;
+  }
+
+  function crearBloqueNombre() {
+    const cat = S.categoria
+      ? categorias.find((c) => slug(c) === S.categoria)
+      : null;
+
+    const bloque = document.createElement("div");
+    bloque.className = "bloque-nombre" + (cat ? " categoria" : "");
+
+    // El <h1> real vive en el HTML (sr-only): aquí sólo pintamos,
+    // porque el bloque se clona y no debe haber varios h1.
+    const titulo = document.createElement("div");
+    titulo.className = "type-xl";
+
+    if (cat) {
+      titulo.textContent = cat;
+    } else {
+      // El nombre se anima letra a letra al entrar en pantalla (ver
+      // escribirTitulo). Cada letra es su propio span para poder animarla.
+      titulo.setAttribute("aria-hidden", "true");
+      [...CONFIG.nombre].forEach((letra) => {
+        const sp = document.createElement("span");
+        sp.className = "letra";
+        sp.textContent = letra === " " ? " " : letra;
+        titulo.appendChild(sp);
+      });
+    }
+    bloque.appendChild(titulo);
+
+    if (!cat) {
+      const lema = document.createElement("p");
+      lema.className = "lema type-large";
+      lema.textContent = CONFIG.lema;
+      bloque.appendChild(lema);
+    }
+
+    const acciones = document.createElement("div");
+    acciones.className = "acciones";
+    acciones.innerHTML =
+      '<a class="pill" href="sobre-mi.html">Sobre mí</a>' +
+      '<a class="pill pill--ghost" href="contacto.html">Contacto</a>';
+    bloque.appendChild(acciones);
+
+    return bloque;
+  }
+
+  function crearCiclo() {
+    const items = S.categoria
+      ? listaCompleta.filter((p) => slug(p.categoria) === S.categoria)
+      : listaCompleta;
+
+    // Con pocas piezas repetimos la lista para que el bucle respire.
+    let lista = items.slice();
+    if (lista.length === 0) lista = demo();
+    while (lista.length < 9) lista = lista.concat(items.length ? items : demo());
+
+    const ciclo = document.createElement("div");
+    ciclo.className = "ciclo";
+
+    // No siempre justo por la mitad: se busca el punto de corte que evite
+    // dejar huecos grandes en la rejilla (ver elegirCorte en rejilla.js).
+    const corte = elegirCorte(lista);
+    ciclo.appendChild(crearRejilla(lista.slice(0, corte), 0));
+    ciclo.appendChild(crearBloqueNombre());
+    ciclo.appendChild(crearRejilla(lista.slice(corte), corte));
+    return ciclo;
+  }
+
+  // =========================================================
+  // Montaje y medición
+  // =========================================================
+  function montar() {
+    pista.innerHTML = "";
+    S.clones = [];
+    S.piezas = [];
+
+    const base = crearCiclo();
+    pista.appendChild(base);
+
+    // Medimos con un solo ciclo en el flujo
+    base.style.position = "relative";
+    S.H = Math.max(base.offsetHeight, 1);
+    base.style.position = "";
+
+    const nClones = Math.max(2, Math.ceil(S.vh / S.H) + 1);
+    S.clones.push(base);
+    for (let i = 1; i < nClones; i++) {
+      const c = base.cloneNode(true);
+      // Los clones repiten los listeners de click
+      c.querySelectorAll(".pieza").forEach((el) => {
+        el.addEventListener("click", () => {
+          if (movido > 8) return;
+          const idx = parseInt(el.dataset.idx, 10);
+          const p = piezaPorIndice(idx);
+          if (p) abrirVisor(p);
+        });
+      });
+      pista.appendChild(c);
+      S.clones.push(c);
+    }
+
+    // Índice de piezas con su posición dentro del ciclo
+    S.clones.forEach((clon, ci) => {
+      clon.querySelectorAll(".pieza").forEach((el) => {
+        S.piezas.push({
+          el,
+          video: el.querySelector("video"),
+          media: el.querySelector(".media"),
+          oy: 0,
+          oh: 0,
+          ci,
+        });
+      });
+    });
+
+    // offsetTop real: la pieza cuelga de .columna > .rejilla > .ciclo,
+    // y .ciclo es el único ancestro posicionado, así que basta un salto.
+    S.piezas.forEach((p) => {
+      let y = 0, n = p.el;
+      while (n && !n.classList.contains("ciclo")) { y += n.offsetTop; n = n.offsetParent; }
+      p.oy = y;
+      p.oh = p.el.offsetHeight;
+    });
+
+    // Punto de partida: el bloque del nombre centrado en pantalla.
+    const nombre = base.querySelector(".bloque-nombre");
+    S.inicio = nombre
+      ? mod(nombre.offsetTop + nombre.offsetHeight / 2 - S.vh / 2, S.H)
+      : 0;
+
+    // Bloques del nombre (uno por clon) para la animación de escritura.
+    S.nombres = [];
+    S.clones.forEach((clon, ci) => {
+      clon.querySelectorAll(".bloque-nombre:not(.categoria) .type-xl").forEach((el) => {
+        S.nombres.push({ el, letras: [...el.querySelectorAll(".letra")], ci, oy: 0, oh: 0, escrito: false });
+      });
+    });
+    S.nombres.forEach((n) => {
+      let y = 0, node = n.el;
+      while (node && !node.classList.contains("ciclo")) { y += node.offsetTop; node = node.offsetParent; }
+      n.oy = y;
+      n.oh = n.el.offsetHeight;
+    });
+  }
+
+  /* Anima el nombre letra a letra, como si se escribiera. Se dispara cada
+     vez que el bloque entra en pantalla — al cargar y en cada vuelta del
+     bucle, no sólo la primera. */
+  function escribirTitulo(letras) {
+    letras.forEach((sp, i) => {
+      sp.animate(
+        [
+          { opacity: 0, transform: "translateY(0.35em) rotateX(-45deg)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 620, delay: i * 34, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" }
+      );
+    });
+  }
+
+  function actualizarNombres() {
+    if (reduceMovimiento) return;
+    const vh = S.vh;
+    for (const n of S.nombres) {
+      if (!n.letras.length) continue;
+      const top = (S.clones[n.ci]._y || 0) + n.oy;
+      const dentro = top < vh * 0.85 && top + n.oh > vh * 0.15;
+      const lejos = top > vh * 1.4 || top + n.oh < -vh * 0.4;
+
+      if (dentro && !n.escrito) {
+        n.escrito = true;
+        escribirTitulo(n.letras);
+      } else if (lejos && n.escrito) {
+        n.escrito = false;   // listo para volver a escribirse en la próxima vuelta
+      }
+    }
+  }
+
+  function piezaPorIndice(idx) {
+    const items = S.categoria
+      ? listaCompleta.filter((p) => slug(p.categoria) === S.categoria)
+      : listaCompleta;
+    const lista = items.length ? items : demo();
+    return lista[idx % lista.length];
+  }
+
+  // =========================================================
+  // Bucle de render
+  // =========================================================
+  let frame = 0;
+
+  function render() {
+    const suav = reduceMovimiento ? 1 : CONFIG.scroll.suavizado;
+    const previo = S.actual;
+    S.actual = lerp(S.actual, S.objetivo, suav);
+    S.velocidad = S.actual - previo;
+
+    const envuelto = mod(S.actual, S.H);
+
+    for (let i = 0; i < S.clones.length; i++) {
+      const y = i * S.H - envuelto;
+      S.clones[i].style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
+      S.clones[i]._y = y;
+    }
+
+    // La gestión de vídeo no necesita ir a 60fps
+    if (frame % 5 === 0) { actualizarMedios(); actualizarNombres(); }
+    frame++;
+
+    requestAnimationFrame(render);
+  }
+
+  function actualizarMedios() {
+    const vh = S.vh;
+    // Empezamos a descargar dos pantallas antes de que se vea, y no soltamos
+    // el archivo hasta estar muy lejos: así al salir del hueco del nombre los
+    // vídeos ya están listos y no hay ese parón de "se queda pillado".
+    const margenCarga = vh * CONFIG.scroll.anticipacion;
+    const margenDescarga = vh * CONFIG.scroll.olvido;
+    const maxJugando = esMovil()
+      ? CONFIG.scroll.autoplayMovil
+      : CONFIG.scroll.autoplayEscritorio;
+
+    const candidatos = [];   // en pantalla: compiten por reproducirse
+    const porCargar = [];    // cerca: compiten por descargarse
+    let cargando = 0;
+
+    for (const p of S.piezas) {
+      const top = (S.clones[p.ci]._y || 0) + p.oy;
+      const centro = top + p.oh / 2;
+      const dist = Math.abs(centro - vh / 2);
+
+      const enPantalla = top < vh && top + p.oh > 0;
+      const cerca = top < vh + margenCarga && top + p.oh > -margenCarga;
+      const lejos = top > vh + margenDescarga || top + p.oh < -margenDescarga;
+
+      if (top < vh * 0.98 && top + p.oh > 0) p.el.classList.add("visible");
+
+      if (p.media && !reduceMovimiento) {
+        const prog = (centro - vh / 2) / vh;
+        const off = clamp(prog, -1.4, 1.4) * (CONFIG.scroll.paralaje * 100) * -1;
+        p.media.style.transform = `translate3d(0, ${off.toFixed(2)}%, 0)`;
+      }
+
+      if (!p.video) continue;
+
+      // NETWORK_LOADING (2) = está bajando datos ahora mismo. Antes miraba
+      // readyState, pero un vídeo pausado fuera de pantalla nunca llega a 3
+      // y se quedaba ocupando el cupo para siempre, frenándolo todo.
+      if (p.video.networkState === 2) cargando++;
+
+      if (cerca) {
+        if (!p.video.src && p.video.dataset.src) {
+          if (enPantalla) cargar(p.video);        // lo que se ve no espera turno
+          else porCargar.push({ p, dist });
+        }
+        if (enPantalla) candidatos.push({ p, dist });
+        else if (!p.video.paused) p.video.pause();
+      } else {
+        if (!p.video.paused) p.video.pause();
+        if (lejos && p.video.src) {
+          p.video.removeAttribute("src");
+          p.video.load();
+          p.debe = false;
+        }
+      }
+    }
+
+    // Descargamos por cercanía y de pocos en pocos: si lanzamos quince
+    // peticiones a la vez se pelean por el ancho de banda y no llega ninguna.
+    porCargar.sort((a, b) => a.dist - b.dist);
+    for (const { p } of porCargar) {
+      if (cargando >= CONFIG.scroll.descargasALaVez) break;
+      cargar(p.video);
+      cargando++;
+    }
+
+    candidatos.sort((a, b) => a.dist - b.dist);
+    candidatos.forEach((c, i) => {
+      const v = c.p.video;
+      const debe = i < maxJugando && !reduceMovimiento && !S.visorAbierto;
+      c.p.debe = debe;
+      if (debe) { if (v.paused) v.play().catch(() => {}); }
+      else if (!v.paused) v.pause();
+    });
+  }
+
+  /* Vigilante: Safari limita cuántos vídeos puede decodificar a la vez y
+     alguno se queda clavado en el primer fotograma. Cada segundo y medio
+     comprobamos que los que deberían moverse se están moviendo de verdad;
+     si no, se reintenta y, en última instancia, se recarga la fuente. */
+  function vigilar() {
+    for (const p of S.piezas) {
+      const v = p.video;
+      if (!v || !p.debe || !v.src) continue;
+
+      if (v.paused) { v.play().catch(() => {}); continue; }
+
+      if (v.currentTime === p.ultimoT) {
+        p.clavado = (p.clavado || 0) + 1;
+        if (p.clavado >= 2) {
+          const src = v.src;
+          v.removeAttribute("src");
+          v.load();
+          v.src = src;
+          v.play().catch(() => {});
+          p.clavado = 0;
+        }
+      } else {
+        p.clavado = 0;
+      }
+      p.ultimoT = v.currentTime;
+    }
+  }
+  setInterval(vigilar, 1500);
+
+  // =========================================================
+  // Entradas: rueda, táctil, teclado
+  // =========================================================
+  function normalizarRueda(e) {
+    let d = e.deltaY;
+    if (e.deltaMode === 1) d *= 16;        // líneas
+    else if (e.deltaMode === 2) d *= S.vh; // páginas
+    return d;
+  }
+
+  window.addEventListener("wheel", (e) => {
+    if (document.querySelector(".visor.abierto")) return;
+    e.preventDefault();
+    S.objetivo += normalizarRueda(e) * CONFIG.scroll.velocidad;
+    ocultarHint();
+  }, { passive: false });
+
+  // Arrastre (táctil y ratón)
+  let arrastrando = false, ultY = 0, ultT = 0, vArrastre = 0;
+
+  escena.addEventListener("pointerdown", (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    arrastrando = true;
+    movido = 0;
+    ultY = e.clientY;
+    ultT = performance.now();
+    vArrastre = 0;
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!arrastrando) return;
+    const dy = e.clientY - ultY;
+    const dt = Math.max(1, performance.now() - ultT);
+    movido += Math.abs(dy);
+    S.objetivo -= dy;
+    vArrastre = (-dy / dt) * 16;
+    ultY = e.clientY;
+    ultT = performance.now();
+    ocultarHint();
+  }, { passive: true });
+
+  window.addEventListener("pointerup", () => {
+    if (!arrastrando) return;
+    arrastrando = false;
+    if (Math.abs(vArrastre) > 1) inercia(vArrastre);   // impulso
+  });
+
+  function inercia(v0) {
+    let v = clamp(v0, -80, 80);
+    (function paso() {
+      if (Math.abs(v) < 0.4 || arrastrando) return;
+      S.objetivo += v;
+      v *= 0.94;
+      requestAnimationFrame(paso);
+    })();
+  }
+
+  window.addEventListener("keydown", (e) => {
+    const paso = S.vh * 0.45;
+    if (["ArrowDown", "PageDown"].includes(e.key) || (e.key === " " && !e.shiftKey)) {
+      S.objetivo += paso; e.preventDefault(); ocultarHint();
+    } else if (["ArrowUp", "PageUp"].includes(e.key) || (e.key === " " && e.shiftKey)) {
+      S.objetivo -= paso; e.preventDefault(); ocultarHint();
+    } else if (e.key === "Escape") {
+      cerrarVisor();
+    }
+  });
+
+  // Deriva automática: desactivada por defecto (CONFIG.scroll.deriva = 0).
+  // Si algún día la quieres, súbela a 0.2 y el bucle se moverá solo.
+  const derivaBase = reduceMovimiento ? 0 : (CONFIG.scroll.deriva || 0);
+  if (derivaBase > 0) {
+    setInterval(() => { if (!arrastrando) S.objetivo += derivaBase; }, 16);
+  }
+
+  const hint = document.querySelector(".hint");
+  let hintOculto = false;
+  function ocultarHint() {
+    if (hintOculto || !hint) return;
+    hintOculto = true;
+    hint.style.opacity = "0";
+  }
+
+  // =========================================================
+  // Visor a pantalla completa
+  // =========================================================
+  const visor = document.querySelector(".visor");
+  const visorVideo = visor ? visor.querySelector("video") : null;
+  const visorPie = visor ? visor.querySelector(".pie") : null;
+
+  function abrirVisor(p) {
+    if (!visor || !p || !p.video) return;
+    // Al abrir, la rejilla se calla y se para: el reproductor manda.
+    S.visorAbierto = true;
+    S.piezas.forEach((x) => { if (x.video && !x.video.paused) x.video.pause(); });
+
+    visorVideo.src = medio(p.video);
+    vigilarCarga(visor, visorVideo);
+    visorVideo.muted = false;          // aquí sí queremos oírlo
+    visorVideo.volume = 1;
+    visorVideo.play().catch(() => {});
+    visorPie.textContent = [p.titulo, p.categoria].filter(Boolean).join(" — ");
+    visor.classList.add("abierto");
+  }
+
+  function cerrarVisor() {
+    if (!visor || !visor.classList.contains("abierto")) return;
+    visor.classList.remove("abierto");
+    S.visorAbierto = false;
+    visorVideo.pause();
+    setTimeout(() => { visorVideo.removeAttribute("src"); visorVideo.load(); }, 400);
+  }
+
+  if (visor) {
+    visor.addEventListener("click", (e) => {
+      if (e.target === visor || e.target.closest(".cerrar")) cerrarVisor();
+    });
+  }
+
+  // =========================================================
+  // Filtros por categoría (rutas con #)
+  // =========================================================
+  const ui = document.querySelector(".ui-inferior");
+  const barra = document.querySelector(".filtros");
+  const btnFiltro = document.querySelector(".boton-filtro");
+  const uiSuperior = document.querySelector(".ui-superior");
+
+  function pintarFiltros() {
+    if (!barra) return;
+    barra.innerHTML = "";
+
+    // Desde la portada, cada categoría abre su propia página (scroll normal).
+    const opciones = [{ etiqueta: "Todos", url: "", activo: true }]
+      .concat(categorias.map((c) => ({ etiqueta: c, url: "categoria.html#" + slug(c) })))
+      .concat([{ etiqueta: "Fotos", url: "fotos.html" }]);
+
+    opciones.forEach((o) => {
+      const el = document.createElement(o.url ? "a" : "button");
+      el.textContent = o.etiqueta;
+      if (o.url) el.href = o.url;
+      if (o.activo) el.className = "activo";
+      if (!o.url) el.addEventListener("click", () => ui.classList.remove("abierta"));
+      barra.appendChild(el);
+    });
+  }
+
+  if (btnFiltro) {
+    btnFiltro.addEventListener("click", () => ui.classList.toggle("abierta"));
+  }
+  document.addEventListener("click", (e) => {
+    if (ui && ui.classList.contains("abierta") && !ui.contains(e.target)) {
+      ui.classList.remove("abierta");
+    }
+  });
+
+  function aplicarRuta() {
+    const h = (location.hash || "").replace(/^#/, "");
+    S.categoria = categorias.some((c) => slug(c) === h) ? h : "";
+    montar();
+    S.actual = S.objetivo = S.inicio;   // arrancamos con el nombre centrado
+    pintarFiltros();
+    if (uiSuperior) uiSuperior.style.display = S.categoria ? "" : "none";
+    document.title = S.categoria
+      ? `${categorias.find((c) => slug(c) === S.categoria)} — ${CONFIG.nombre}`
+      : `${CONFIG.nombre} — ${CONFIG.lema}`;
+  }
+
+  window.addEventListener("hashchange", aplicarRuta);
+
+  // =========================================================
+  // Redimensionado
+  // =========================================================
+  let tRes;
+  window.addEventListener("resize", () => {
+    clearTimeout(tRes);
+    tRes = setTimeout(() => {
+      S.vh = window.innerHeight;
+      const rel = S.H ? mod(S.actual, S.H) / S.H : 0;
+      montar();
+      S.actual = S.objetivo = rel * S.H;   // conservamos la posición relativa
+    }, 180);
+  });
+
+  // =========================================================
+  // Arranque
+  // =========================================================
+  function arrancar() {
+    S.vh = window.innerHeight;
+    // Rellenamos los textos de marca en el HTML estático
+    document.querySelectorAll("[data-nombre]").forEach((el) => (el.textContent = CONFIG.nombre));
+    aplicarRuta();
+    requestAnimationFrame(render);
+
+    const cortina = document.querySelector(".cortina");
+    if (cortina) {
+      setTimeout(() => {
+        cortina.classList.add("fuera");
+        setTimeout(() => cortina.remove(), 700);
+      }, 120);
+    }
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    // Esperamos a las fuentes para medir bien la altura del ciclo
+    document.fonts.ready.then(arrancar);
+    setTimeout(() => { if (!S.H) arrancar(); }, 1500); // red de seguridad
+  } else {
+    window.addEventListener("load", arrancar);
+  }
+})();

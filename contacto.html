@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contacto — Isidro González</title>
+<meta name="description" content="Contacta con Isidro González para presupuestos y proyectos audiovisuales.">
+<meta name="theme-color" content="#fffbf4">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<div class="pagina">
+  <div class="pagina-inner">
+
+    <nav class="ui-superior">
+      <a class="pill" href="index.html">← Trabajos</a>
+    </nav>
+
+    <header class="cabecera-pagina">
+      <h1 class="type-xl">Contacto</h1>
+    </header>
+
+    <div class="columnas-texto">
+
+      <div class="col-texto">
+        <p class="type-large">Cuéntame qué quieres rodar: fechas, formato y para
+        quién es. Respondo en 24–48 h con una propuesta y presupuesto.</p>
+
+        <form class="formulario type-base" style="margin-top:6vh">
+          <div class="campo">
+            <label for="nombre" class="type-small">Nombre</label>
+            <input id="nombre" name="nombre" type="text" required autocomplete="name">
+          </div>
+          <div class="campo">
+            <label for="email" class="type-small">Email</label>
+            <input id="email" name="email" type="email" required autocomplete="email">
+          </div>
+          <div class="campo">
+            <label for="mensaje" class="type-small">Proyecto</label>
+            <textarea id="mensaje" name="mensaje" required
+                      placeholder="Tipo de vídeo, fechas, duración, dónde se va a ver…"></textarea>
+          </div>
+          <div>
+            <button type="submit" class="pill">Enviar mensaje</button>
+          </div>
+        </form>
+      </div>
+
+      <aside class="col-lateral type-base">
+        <div class="bloque-datos">
+          <h2 class="type-small">Directo</h2>
+          <ul>
+            <li><a data-email href="#">hola@isidrogonzalez.com</a></li>
+            <li><a data-telefono href="#">+34 600 000 000</a></li>
+            <li data-ciudad>Madrid, España</li>
+          </ul>
+        </div>
+
+        <div class="bloque-datos">
+          <h2 class="type-small">Redes</h2>
+          <ul>
+            <li><a data-instagram href="#" target="_blank" rel="noopener">Instagram</a></li>
+            <li><a data-vimeo href="#" target="_blank" rel="noopener">Vimeo</a></li>
+            <li><a data-youtube href="#" target="_blank" rel="noopener">YouTube</a></li>
+          </ul>
+        </div>
+
+        <div class="bloque-datos">
+          <h2 class="type-small">Disponibilidad</h2>
+          <ul>
+            <li>Rodajes en toda España</li>
+            <li>Viajes internacionales bajo presupuesto</li>
+          </ul>
+        </div>
+      </aside>
+
+    </div>
+
+    <footer class="pie-pagina type-small">
+      <span>© <span data-anio>2026</span> <span data-nombre>Isidro González</span></span>
+      <a href="sobre-mi.html">Sobre mí →</a>
+    </footer>
+
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/paginas.js"></script>
+</body>
+</html>
