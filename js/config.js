@@ -19,7 +19,7 @@ const CONFIG = {
   /* Si algún día sirves los vídeos desde un CDN (Cloudflare R2, Bunny…),
      pon aquí la URL base y todo el sitio tirará de allí sin tocar nada más.
      Ejemplo: "https://media.isidrogonzalez.com"                              */
-  cdn: "",
+  cdn: "https://pub-c150fb9e2f294579ba8110a1709d028e.r2.dev",
 
   /* Calidad de los vídeos de la rejilla:
        "previa"   → bucles de 6 s y ~1 MB (recomendado, va suave)

@@ -31,9 +31,9 @@ fi
 
 # ---------- Bucket ----------
 if npx wrangler r2 bucket info "$BUCKET" >/dev/null 2>&1; then
-  echo "· El bucket «$BUCKET» ya existe."
+  echo "· El bucket «${BUCKET}» ya existe."
 else
-  echo "· Creando el bucket «$BUCKET»…"
+  echo "· Creando el bucket «${BUCKET}»…"
   npx wrangler r2 bucket create "$BUCKET" --location weur
   echo "· Activando el acceso público…"
   npx wrangler r2 bucket dev-url enable "$BUCKET" --force

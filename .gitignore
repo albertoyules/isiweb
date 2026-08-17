@@ -7,3 +7,6 @@ videos/
 fotos/
 
 node_modules/
+
+# Registro local de qué se subió ya a R2 (subir-r2.sh)
+.r2-subidos
