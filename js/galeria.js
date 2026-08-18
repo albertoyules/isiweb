@@ -173,9 +173,9 @@
             else porCargar.push({ v, dist });
           }
           if (enPantalla) candidatos.push({ el, v, dist });
-          else if (!v.paused) v.pause();
+          else pausar(v);
         } else {
-          if (!v.paused) v.pause();
+          pausar(v);
           if (lejos && v.src) { v.removeAttribute("src"); v.load(); el.dataset.debe = ""; }
         }
       });
@@ -192,8 +192,8 @@
       candidatos.forEach((c, i) => {
         const debe = i < maxJugando && !visorAbierto;
         c.el.dataset.debe = debe ? "1" : "";
-        if (debe) { if (c.v.paused) c.v.play().catch(() => {}); }
-        else if (!c.v.paused) c.v.pause();
+        if (debe) reproducir(c.v);
+        else pausar(c.v);
       });
     }
 
@@ -208,7 +208,7 @@
       piezas.forEach((el) => {
         const v = el.querySelector("video");
         if (!v || el.dataset.debe !== "1" || !v.src) return;
-        if (v.paused) { v.play().catch(() => {}); return; }
+        if (v.paused) { reproducir(v); return; }
         if (v.currentTime > 0) el.dataset.arrancado = "1";
         if (v.currentTime === +el.dataset.t) {
           if (el.dataset.arrancado !== "1") return;
@@ -216,7 +216,9 @@
           if (+el.dataset.clavado >= 2) {
             const src = v.src;
             v.removeAttribute("src"); v.load();
-            v.src = src; v.play().catch(() => {});
+            v.src = src;
+            v.dataset.pendiente = "";
+            reproducir(v);
             el.dataset.clavado = 0;
             el.dataset.arrancado = "";
           }

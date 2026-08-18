@@ -63,6 +63,40 @@ function cargarPoster(video) {
   video.poster = video.dataset.poster;
 }
 
+/* EL FALLO GORDO EN MÓVIL ERA ESTE. La rejilla decide muchas veces por
+   segundo qué vídeos deben reproducirse (según lo cerca que estén del
+   centro de la pantalla), y antes se llamaba a video.play() / .pause()
+   directamente cada vez. En un ordenador rápido play() resuelve casi al
+   instante, así que nunca daba tiempo a que le llegara un pause() de en
+   medio. En un iPhone real, con play() tardando de verdad (red, decodificar
+   el primer fotograma…), el siguiente ciclo de la rejilla —83 ms después—
+   ya le mandaba pause() al mismo vídeo ANTES de que play() llegara a
+   resolverse. Eso aborta la reproducción con "AbortError: The operation
+   was aborted" — confirmado tecleando directamente en la consola del
+   Inspector Web conectado a un iPhone. El vídeo nunca llegaba a arrancar:
+   se interrumpía a sí mismo en bucle, una y otra vez.
+
+   Estas dos funciones llevan la cuenta de si hay un play() todavía en el
+   aire (dataset.pendiente) y, mientras lo esté, ignoran cualquier orden de
+   pausar — se deja que la promesa termine de resolverse antes de tocar el
+   vídeo otra vez. */
+function reproducir(video) {
+  if (!video || video.dataset.pendiente === "1" || !video.paused) return;
+  video.dataset.pendiente = "1";
+  const promesa = video.play();
+  if (promesa && promesa.then) {
+    promesa
+      .then(() => { video.dataset.pendiente = ""; })
+      .catch(() => { video.dataset.pendiente = ""; });
+  } else {
+    video.dataset.pendiente = "";
+  }
+}
+function pausar(video) {
+  if (!video || video.dataset.pendiente === "1" || video.paused) return;
+  video.pause();
+}
+
 /* Estados del reproductor: mientras carga muestra un giro, y si falla dice
    POR QUÉ falla en vez de quedarse en negro sin explicación. */
 function vigilarCarga(visor, video) {

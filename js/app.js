@@ -417,9 +417,9 @@
           else porCargar.push({ p, dist });
         }
         if (enPantalla) candidatos.push({ p, dist });
-        else if (!p.video.paused) p.video.pause();
+        else pausar(p.video);
       } else {
-        if (!p.video.paused) p.video.pause();
+        pausar(p.video);
         if (lejos && p.video.src) {
           p.video.removeAttribute("src");
           p.video.load();
@@ -442,8 +442,8 @@
       const v = c.p.video;
       const debe = i < maxJugando && !reduceMovimiento && !S.visorAbierto;
       c.p.debe = debe;
-      if (debe) { if (v.paused) v.play().catch(() => {}); }
-      else if (!v.paused) v.pause();
+      if (debe) reproducir(v);
+      else pausar(v);
     });
   }
 
@@ -456,7 +456,7 @@
       const v = p.video;
       if (!v || !p.debe || !v.src) continue;
 
-      if (v.paused) { v.play().catch(() => {}); continue; }
+      if (v.paused) { reproducir(v); continue; }
 
       if (v.currentTime > 0) p.arrancado = true;
 
@@ -478,7 +478,8 @@
             v.removeAttribute("src");
             v.load();
             v.src = src;
-            v.play().catch(() => {});
+            v.dataset.pendiente = "";   // se reinicia del todo: no hay play() en vuelo
+            reproducir(v);
             p.clavado = 0;
             p.arrancado = false;
           }
@@ -585,7 +586,7 @@
     if (!visor || !p || !p.video) return;
     // Al abrir, la rejilla se calla y se para: el reproductor manda.
     S.visorAbierto = true;
-    S.piezas.forEach((x) => { if (x.video && !x.video.paused) x.video.pause(); });
+    S.piezas.forEach((x) => pausar(x.video));
 
     visorVideo.src = medio(p.video);
     vigilarCarga(visor, visorVideo);
