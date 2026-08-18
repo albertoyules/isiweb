@@ -1,0 +1,30 @@
+# Rótulos que se ven en la web.
+#
+#   ruta dentro de /videos = Título
+#
+# Sirve para separar el nombre del ARCHIVO del nombre que se VE. Así varios
+# vídeos del mismo cliente pueden salir todos con el mismo rótulo sin tener
+# que renombrar archivos (renombrarlos obligaría a volver a comprimirlos y
+# a subirlos otra vez a Cloudflare).
+#
+# Lo que no aparezca aquí usa el nombre del archivo, como siempre.
+# Después de tocar este archivo:  node generar-datos.mjs
+
+# --- Peluquería (5 vídeos, todos con el mismo nombre) ---
+NEGOCIOS/Replik Hair Studio 1.mp4 = REPLIK HAIR STUDIO
+NEGOCIOS/Replik Hair Studio 2.mp4 = REPLIK HAIR STUDIO
+NEGOCIOS/Replik Hair Studio 3.mp4 = REPLIK HAIR STUDIO
+NEGOCIOS/Replik Hair Studio 4.mp4 = REPLIK HAIR STUDIO
+NEGOCIOS/Replik Hair Studio 5.mp4 = REPLIK HAIR STUDIO
+
+# --- La Colorá (3 vídeos, todos con el mismo nombre) ---
+PUBLICIDAD/La Colora 1.mp4 = LA COLORÁ
+PUBLICIDAD/La Colora 2.mp4 = LA COLORÁ
+PUBLICIDAD/La Colora 3.mp4 = LA COLORÁ
+
+# --- Cambios de nombre pedidos ---
+DEPORTES/Training 2.mp4          = ENTRENO MAT 2
+DEPORTES/Asissport video 4.mp4   = ASSISPORT
+DEPORTES/Padel.mp4               = LORENA
+DEPORTES/MAN WORLD.mp4           = FUTBOL
+NEGOCIOS/Reel chck.mp4           = SOLE HUNTERS

@@ -7,21 +7,51 @@
 # Los vídeos que no aparezcan aquí (por ejemplo, si añades uno nuevo)
 # se colocan al final automáticamente.
 #
-# Esta plantilla se generó sola con el orden que había ahora mismo.
-# Bórrala si prefieres volver al barajado automático.
+# ---------------------------------------------------------------
+# POR QUÉ ESTÁN ASÍ COLOCADOS (importante si tocas el orden)
+#
+# La rejilla no deja huecos si cada bloque de vídeos verticales tiene un
+# número de piezas que cuadre con las columnas: 12, 6 y 4 (3 columnas los
+# dos primeros, 2 el último; en móvil son 2 columnas y los tres cuadran).
+#
+# Los bloques los separan: (a) el nombre grande del centro, que cae justo
+# a la mitad — tras el vídeo 12 — y (b) Benajarafe, el único vídeo
+# apaisado, que ocupa una fila entera él solo.
+#
+#   vídeos  1-12  → bloque de 12   (antes del nombre)
+#   vídeos 13-18  → bloque de  6
+#   Benajarafe    → fila apaisada
+#   vídeos 20-23  → bloque de  4
+#
+# Si añades o quitas vídeos, procura mantener bloques con un número par
+# de piezas (mejor aún si es múltiplo de 6) o volverán a salir huecos.
+# Las categorías van alternadas a propósito para que la rejilla no
+# muestre tres vídeos seguidos del mismo tipo.
+# ---------------------------------------------------------------
 
 DEPORTES/Embassy.mp4
+NEGOCIOS/Replik Hair Studio 1.mp4
 PUBLICIDAD/Twojeys.mp4
-NEGOCIOS/Pepe Peluqueria.mp4
-DEPORTES/MAN WORLD.mp4
-NEGOCIOS/Reel chck.mp4
-PUBLICIDAD/Terraza Chinitas Centro.mp4
-PUBLICIDAD/Benajarafe.mp4
-DEPORTES/Training 2.mp4
 DEPORTES/Entreno Mat.mp4
+NEGOCIOS/Reel chck.mp4
+PUBLICIDAD/La Colora 1.mp4
+DEPORTES/MAN WORLD.mp4
+NEGOCIOS/Replik Hair Studio 2.mp4
+PUBLICIDAD/Terraza Chinitas Centro.mp4
+DEPORTES/Training 2.mp4
+NEGOCIOS/Terraza Chinitas Bellavista.mp4
+PUBLICIDAD/La Colora 2.mp4
+
 DEPORTES/Asissport video 4.mp4
-DEPORTES/Evento Fisio.mp4
+NEGOCIOS/Replik Hair Studio 3.mp4
 PUBLICIDAD/Luxury Villa.MOV
 DEPORTES/Padel.mp4
+NEGOCIOS/Pepe Peluqueria.mp4
+PUBLICIDAD/La Colora 3.mp4
+
+PUBLICIDAD/Benajarafe.mp4
+
+DEPORTES/Evento Fisio.mp4
+NEGOCIOS/Replik Hair Studio 4.mp4
 DEPORTES/lorena.mp4
-NEGOCIOS/Terraza Chinitas Bellavista.mp4
+NEGOCIOS/Replik Hair Studio 5.mp4

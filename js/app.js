@@ -76,7 +76,7 @@
 
     const marco = document.createElement("div");
     marco.className = "marco";
-    marco.style.setProperty("--ar", p.ar || "4 / 5");
+    marco.style.setProperty("--ar", arDeRejilla(p));
 
     if (p.video) {
       const v = document.createElement("video");
@@ -130,14 +130,29 @@
     if (cat) {
       titulo.textContent = cat;
     } else {
-      // El nombre se anima letra a letra al entrar en pantalla (ver
-      // escribirTitulo). Cada letra es su propio span para poder animarla.
+      /* El nombre se anima letra a letra al entrar en pantalla (ver
+         escribirTitulo). Cada letra es su propio span para poder animarla, y
+         cada palabra va envuelta en .palabra para que en el móvil "ISIDRO" y
+         "GONZÁLEZ" caigan en dos líneas enteras: a 15vw no cabían en una y
+         el nombre se salía de la pantalla. */
       titulo.setAttribute("aria-hidden", "true");
-      [...CONFIG.nombre].forEach((letra) => {
-        const sp = document.createElement("span");
-        sp.className = "letra";
-        sp.textContent = letra === " " ? " " : letra;
-        titulo.appendChild(sp);
+      const palabras = CONFIG.nombre.split(" ").filter(Boolean);
+      palabras.forEach((palabra, wi) => {
+        const w = document.createElement("span");
+        w.className = "palabra";
+        [...palabra].forEach((letra) => {
+          const sp = document.createElement("span");
+          sp.className = "letra";
+          sp.textContent = letra;
+          w.appendChild(sp);
+        });
+        titulo.appendChild(w);
+        if (wi < palabras.length - 1) {
+          const hueco = document.createElement("span");
+          hueco.className = "hueco-palabra";
+          hueco.textContent = " ";
+          titulo.appendChild(hueco);
+        }
       });
     }
     bloque.appendChild(titulo);
@@ -168,6 +183,7 @@
     let lista = items.slice();
     if (lista.length === 0) lista = demo();
     while (lista.length < 9) lista = lista.concat(items.length ? items : demo());
+    lista = unificarVerticales(lista);
 
     const ciclo = document.createElement("div");
     ciclo.className = "ciclo";
@@ -228,21 +244,6 @@
       });
     });
 
-    // offsetTop real: la pieza cuelga de .columna > .rejilla > .ciclo,
-    // y .ciclo es el único ancestro posicionado, así que basta un salto.
-    S.piezas.forEach((p) => {
-      let y = 0, n = p.el;
-      while (n && !n.classList.contains("ciclo")) { y += n.offsetTop; n = n.offsetParent; }
-      p.oy = y;
-      p.oh = p.el.offsetHeight;
-    });
-
-    // Punto de partida: el bloque del nombre centrado en pantalla.
-    const nombre = base.querySelector(".bloque-nombre");
-    S.inicio = nombre
-      ? mod(nombre.offsetTop + nombre.offsetHeight / 2 - S.vh / 2, S.H)
-      : 0;
-
     // Bloques del nombre (uno por clon) para la animación de escritura.
     S.nombres = [];
     S.clones.forEach((clon, ci) => {
@@ -250,12 +251,39 @@
         S.nombres.push({ el, letras: [...el.querySelectorAll(".letra")], ci, oy: 0, oh: 0, escrito: false });
       });
     });
-    S.nombres.forEach((n) => {
-      let y = 0, node = n.el;
-      while (node && !node.classList.contains("ciclo")) { y += node.offsetTop; node = node.offsetParent; }
-      n.oy = y;
-      n.oh = n.el.offsetHeight;
-    });
+
+    medir();
+  }
+
+  /* Mide el ciclo: altura total, posición de cada pieza y de cada bloque de
+     nombre. Va aparte de montar() porque las separaciones de la rejilla van
+     en vh: cuando cambia el alto de la ventana hay que volver a medir, pero
+     NO hace falta reconstruir el DOM (y reconstruirlo se cargaba los vídeos
+     que estuvieran descargándose). */
+  function medir() {
+    const base = S.clones[0];
+    if (!base) return;
+
+    base.style.position = "relative";
+    S.H = Math.max(base.offsetHeight, 1);
+    base.style.position = "";
+
+    // offsetTop real: la pieza cuelga de .columna > .rejilla > .ciclo,
+    // y .ciclo es el único ancestro posicionado, así que basta un salto.
+    const desdeElCiclo = (el) => {
+      let y = 0, n = el;
+      while (n && !n.classList.contains("ciclo")) { y += n.offsetTop; n = n.offsetParent; }
+      return y;
+    };
+
+    S.piezas.forEach((p) => { p.oy = desdeElCiclo(p.el); p.oh = p.el.offsetHeight; });
+    S.nombres.forEach((n) => { n.oy = desdeElCiclo(n.el); n.oh = n.el.offsetHeight; });
+
+    // Punto de partida: el bloque del nombre centrado en pantalla.
+    const nombre = base.querySelector(".bloque-nombre");
+    S.inicio = nombre
+      ? mod(nombre.offsetTop + nombre.offsetHeight / 2 - S.vh / 2, S.H)
+      : 0;
   }
 
   /* Anima el nombre letra a letra, como si se escribiera. Se dispara cada
@@ -560,16 +588,24 @@
     if (!barra) return;
     barra.innerHTML = "";
 
-    // Desde la portada, cada categoría abre su propia página (scroll normal).
+    /* Desde la portada, cada categoría abre su propia página (scroll normal).
+       Sobre mí y Contacto van también aquí: en el móvil sus botones sólo
+       aparecían dentro del bloque del nombre, así que si no caías justo en
+       él no había forma de salir de la portada. */
     const opciones = [{ etiqueta: "Todos", url: "", activo: true }]
       .concat(categorias.map((c) => ({ etiqueta: c, url: "categoria.html#" + slug(c) })))
-      .concat([{ etiqueta: "Fotos", url: "fotos.html" }]);
+      .concat([
+        { etiqueta: "Fotos", url: "fotos.html" },
+        { etiqueta: "Sobre mí", url: "sobre-mi.html", aparte: true },
+        { etiqueta: "Contacto", url: "contacto.html" },
+      ]);
 
     opciones.forEach((o) => {
       const el = document.createElement(o.url ? "a" : "button");
       el.textContent = o.etiqueta;
       if (o.url) el.href = o.url;
       if (o.activo) el.className = "activo";
+      if (o.aparte) el.classList.add("aparte");
       if (!o.url) el.addEventListener("click", () => ui.classList.remove("abierta"));
       barra.appendChild(el);
     });
@@ -602,14 +638,36 @@
   // Redimensionado
   // =========================================================
   let tRes;
+  let anchoPrevio = window.innerWidth;
+
   window.addEventListener("resize", () => {
-    clearTimeout(tRes);
-    tRes = setTimeout(() => {
-      S.vh = window.innerHeight;
-      const rel = S.H ? mod(S.actual, S.H) / S.H : 0;
-      montar();
-      S.actual = S.objetivo = rel * S.H;   // conservamos la posición relativa
-    }, 180);
+    S.vh = window.innerHeight;
+    const ancho = window.innerWidth;
+    const guardarSitio = (accion, espera) => {
+      clearTimeout(tRes);
+      tRes = setTimeout(() => {
+        const rel = S.H ? mod(S.actual, S.H) / S.H : 0;
+        accion();
+        S.actual = S.objetivo = rel * S.H;   // conservamos la posición relativa
+      }, espera);
+    };
+
+    /* ESTE ERA EL MOTIVO DE QUE EN EL MÓVIL NO CARGARA NINGÚN VÍDEO.
+       En iOS, al deslizar, la barra del navegador se esconde y vuelve a
+       salir: eso cambia window.innerHeight y dispara "resize" una y otra
+       vez. Con el código anterior cada uno de esos avisos hacía un montar()
+       entero, que vacía la pista y destruye todos los <video> — incluidos
+       los que estaban a media descarga. Mientras se seguía deslizando, no
+       les daba tiempo a cargar y se quedaban en el póster para siempre.
+       Si sólo ha cambiado el alto, la maquetación es idéntica (depende del
+       ancho): basta con volver a medir, sin tocar el DOM. */
+    if (ancho === anchoPrevio) {
+      guardarSitio(medir, 250);
+      return;
+    }
+
+    anchoPrevio = ancho;
+    guardarSitio(montar, 180);
   });
 
   // =========================================================

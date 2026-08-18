@@ -14,6 +14,9 @@
 
   /* Una sola variable manda todo el espaciado del sitio */
   --grid-space: 4vw;
+  /* Aire entre piezas de una misma columna. Era 14vh fijo: en el móvil, con
+     las piezas ya de por sí altísimas, se veía más fondo que vídeo. */
+  --gap-fila: 8vh;
 
   --font-display: "Playfair Display", "Didot", "Bodoni 72", "Times New Roman", serif;
   --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -23,7 +26,10 @@
 }
 
 @media (min-width: 992px) {
-  :root { --grid-space: 6vw; }
+  :root { --grid-space: 6vw; --gap-fila: 10vh; }
+}
+@media (max-width: 600px) {
+  :root { --grid-space: 3vw; --gap-fila: 5vh; }
 }
 
 /* ---------- Reset ---------- */
@@ -135,17 +141,27 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 /* --- Rejilla de 3 columnas --- */
 .rejilla {
   display: grid;
-  /* --cols lo fija JS (2 o 3) según cuántas piezas haya, para que no
-     aparezcan huecos grandes cuando el número no es múltiplo de 3. */
+  /* --cols lo fija JS: 3 en escritorio, 2 por debajo de 900px, y una menos
+     cuando así cuadra el número de piezas del bloque (ver elegirColumnas).
+     Aquí NO se sobreescribe con !important: si el CSS pusiera un número
+     distinto del que usó JS para repartir, las columnas sobrantes caerían a
+     una fila nueva y dejarían medio ancho de pantalla vacío. */
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
   gap: var(--grid-space);
   align-items: start;
-}
-/* En pantallas pequeñas mandan estos saltos, pase lo que pase con --cols */
-@media (max-width: 900px) { .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
-@media (max-width: 600px) { .rejilla { grid-template-columns: minmax(0, 1fr) !important; } }
 
-.columna { display: flex; flex-direction: column; gap: 14vh; }
+  /* Un bloque con menos columnas de las normales no se estira: se queda del
+     ancho que le tocaría dentro de la rejilla grande y se centra. Así una
+     tanda de 4 vídeos en 2 columnas tiene EL MISMO tamaño de pieza que las
+     tandas de 3 columnas, en vez de verse el doble de grande. */
+  width: calc(
+    var(--cols, 3) * (100% - (var(--cols-base, 3) - 1) * var(--grid-space)) / var(--cols-base, 3)
+    + (var(--cols, 3) - 1) * var(--grid-space)
+  );
+  margin-inline: auto;
+}
+
+.columna { display: flex; flex-direction: column; gap: var(--gap-fila); }
 
 /* --- Pieza de trabajo --- */
 .pieza { display: block; cursor: pointer; }
@@ -182,6 +198,12 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
   gap: 1em;
   margin-top: 10px;
 }
+/* En columna estrecha unos rótulos ocupan una línea y otros dos, y esa
+   diferencia descuadraba el final de las columnas. Reservando el alto de
+   dos líneas para todos, las columnas vuelven a cerrar a la par. */
+@media (max-width: 600px) {
+  .meta { min-height: 2.4em; align-items: flex-start; }
+}
 .meta .titulo { font-weight: 600; }
 .meta .cat { color: var(--muted); }
 
@@ -203,6 +225,16 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 .letra { display: inline-block; opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .letra { opacity: 1; }
+}
+
+/* Cada palabra entera, sin partirse por la mitad */
+.palabra { display: inline-block; }
+
+/* En el móvil el nombre va apilado: ISIDRO arriba, GONZÁLEZ debajo */
+@media (max-width: 600px) {
+  .bloque-nombre .type-xl { font-size: 19vw; margin-left: 0; }
+  .bloque-nombre .type-xl .palabra { display: block; }
+  .bloque-nombre .type-xl .hueco-palabra { display: none; }
 }
 .bloque-nombre .lema {
   max-width: 30ch;
@@ -232,14 +264,23 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 .filtros {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;               /* con 7 opciones ya no cabe todo en una fila */
   gap: 4px;
   padding: 6px;
-  border-radius: 999px;
+  border-radius: 22px;
   background: var(--ink);
   color: var(--bg);
-  overflow: hidden;
   max-width: min(92vw, 900px);
   transition: opacity 0.4s linear, transform 0.6s var(--ease-out);
+}
+
+/* Separador antes de Sobre mí: distingue "filtrar" de "ir a otra página" */
+.filtros .aparte { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.22); margin-left: 4px; }
+@media (max-width: 600px) {
+  .filtros .aparte { box-shadow: none; margin-left: 0; }
+  .filtros button,
+  .filtros a { padding: 0.85em 1.1em; }   /* dedos, no ratones */
 }
 .filtros button,
 .filtros a {
@@ -473,6 +514,23 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
   text-align: center;
   margin-bottom: 2vh;
 }
+
+/* Sobre mí y Contacto no tienen el menú flotante de abajo (no hay nada que
+   filtrar), así que sus enlaces se quedan pegados arriba: en el móvil, si
+   no, había que bajar hasta el pie para poder cambiar de página. */
+.pagina .nav-paginas {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: calc(var(--grid-space) * -1.6) calc(var(--grid-space) * -1) 4vh;
+  padding: 14px var(--grid-space);
+  background: var(--bg);
+}
+.pagina .nav-paginas .pill--ghost { background: var(--bg); }
 
 
 /* --- Piezas apaisadas: rompen la rejilla y ocupan dos tercios --- */

@@ -75,20 +75,69 @@ function esApaisada(p) {
   return w && h ? w / h > 1.15 : false;
 }
 
+// Proporción con la que se PINTA la pieza (ver unificarVerticales).
+function arDeRejilla(p) {
+  return p.arRejilla || p.ar || "4 / 5";
+}
+
 // Altura relativa de una pieza si todas las columnas tuvieran ancho 1.
 function alturaEstimada(p) {
-  const [w, h] = (p.ar || "4 / 5").split("/").map((n) => parseFloat(n));
+  const [w, h] = arDeRejilla(p).split("/").map((n) => parseFloat(n));
   return w && h ? h / w : 1.25;
 }
 
-/* Siempre 3 columnas. (Se probó a reducir el número de columnas para
-   grupos pequeños o mal repartidos, pero al ser cada columna más ancha,
-   cada pieza también sale más alta — el hueco no desaparece, sólo cambia
-   de sitio, y de paso esas piezas quedan más grandes que sus vecinas. El
-   ajuste real se hace eligiendo bien el CORTE del ciclo, ver elegirCorte,
-   más la repartición por altura real de más abajo.) */
-function elegirColumnas() {
-  return 3;
+/* Pone a todas las piezas verticales la proporción más repetida del grupo.
+   Casi todos los vídeos son 9/16; con que uno solo se salga (por ejemplo
+   uno un poco más cuadrado), su columna cierra más arriba que las otras y
+   queda un diente en el borde de abajo por mucho que el número de piezas
+   cuadre. Al pintarlas todas con la misma proporción, las columnas acaban
+   exactamente a la misma altura. Lo que sobra se recorta con object-fit:
+   cover y en el reproductor el vídeo se sigue viendo entero.
+   Sólo para vídeo: las fotos tienen formatos muy distintos a propósito. */
+function unificarVerticales(items) {
+  const cuenta = new Map();
+  for (const p of items) {
+    if (esApaisada(p)) continue;
+    cuenta.set(p.ar, (cuenta.get(p.ar) || 0) + 1);
+  }
+  if (!cuenta.size) return items;
+  const dominante = [...cuenta.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  return items.map((p) => (esApaisada(p) ? p : { ...p, arRejilla: dominante }));
+}
+
+/* Columnas según el ancho de pantalla.
+   OJO: este número lo tiene que decidir JS, no el CSS. Antes el CSS forzaba
+   2 columnas por debajo de 900px y 1 por debajo de 600px con !important,
+   pero JS seguía repartiendo las piezas en 3 contenedores .columna: el
+   tercero caía a una fila nueva y dejaba medio ancho de pantalla en blanco.
+   De ahí venían los huecos grandes en tableta y móvil. */
+function columnasBase() {
+  const w = window.innerWidth;
+  return w < 900 ? 2 : 3;
+}
+
+/* Cuántas columnas usar para un grupo de g piezas.
+   Como casi todas las piezas son verticales y de la misma proporción, si g
+   es múltiplo del número de columnas todas acaban EXACTAMENTE a la misma
+   altura y no queda ni un hueco. Si no lo es, se prueba con una columna
+   menos antes de rendirse: mejor un bloque de dos columnas bien cerrado que
+   uno de tres con la última fila coja. */
+function elegirColumnas(g) {
+  const base = columnasBase();
+  if (g <= 0) return base;
+  if (g < base) return g;                       // 1 ó 2 piezas sueltas
+  if (g % base === 0) return base;
+  for (let c = base - 1; c >= 2; c--) if (g % c === 0) return c;
+  return base;
+}
+
+// Piezas que sobran (las que dejarían una fila coja) con el mejor reparto.
+function sobra(g) {
+  const base = columnasBase();
+  if (g <= 0 || g < base) return 0;
+  let mejor = g % base;
+  for (let c = base - 1; c >= 2 && mejor > 0; c--) mejor = Math.min(mejor, g % c);
+  return mejor;
 }
 
 // Los mismos "grupos" (tandas entre piezas apaisadas) que formará
@@ -105,16 +154,15 @@ function gruposDeFlush(sub) {
 }
 
 /* Punto de corte del ciclo que separa la mitad de arriba y la de abajo del
-   nombre. Cada grupo de piezas normales entre apaisadas se reparte en 3
-   columnas; si su tamaño es ≡ 1 (mod 3), dos columnas se quedan cortas A LA
-   VEZ mientras la tercera sigue, y el hueco vacío ocupa dos tercios del
-   ancho de la fila. El corte en sí también abre un grupo nuevo (separa lo
-   de arriba de lo de abajo), así que hay que mirar los grupos que
-   resultarían de verdad — no basta con contar piezas por mitad — y elegir
-   el corte que deje el menor número de grupos "malos" en las dos mitades. */
+   nombre. Cada grupo de piezas normales entre apaisadas se reparte en
+   columnas; si su tamaño no cuadra con el número de columnas, la última
+   fila queda coja y ahí aparece el hueco. El corte en sí también abre un
+   grupo nuevo (separa lo de arriba de lo de abajo), así que hay que mirar
+   los grupos que resultarían de verdad — no basta con contar piezas por
+   mitad — y quedarse con el corte que deje menos piezas sueltas. */
 function elegirCorte(lista) {
   const centro = Math.ceil(lista.length / 2);
-  const puntuacion = (grupos) => grupos.reduce((n, g) => n + (g % 3 === 1 ? 1 : 0), 0);
+  const puntuacion = (grupos) => grupos.reduce((n, g) => n + sobra(g), 0);
 
   let mejor = centro;
   let mejorMalo = Infinity;
@@ -144,7 +192,12 @@ function elegirCorte(lista) {
  */
 function construirRejilla(items, crearPieza, base = 0) {
   const frag = document.createDocumentFragment();
-  const desfasesVh = [0, 11, 4];
+  /* Las columnas ya no van escalonadas. El escalonado (0 / 11 / 4 vh) daba
+     un aire editorial, pero como todas las piezas son verticales y de la
+     misma proporción, era justo lo que impedía que el bloque cerrase a ras:
+     dejaba un diente arriba y otro abajo en cada rejilla. Sin desfase y con
+     un número de piezas múltiplo de las columnas, el bloque queda macizo. */
+  const desfasesVh = [0, 0, 0];
   const GAP = 0.5;               // separación entre piezas, misma escala que h/w
   let cola = [];
   let ladoAncha = 0;
@@ -156,6 +209,11 @@ function construirRejilla(items, crearPieza, base = 0) {
     const rejilla = document.createElement("div");
     rejilla.className = "rejilla";
     rejilla.style.setProperty("--cols", n);
+    // Cuántas columnas tendría el bloque si el número de piezas cuadrase:
+    // el CSS lo usa para estrechar el bloque en vez de estirar las piezas
+    // (si no, un bloque de 2 columnas sale con los vídeos gigantes al lado
+    // de los de 3).
+    rejilla.style.setProperty("--cols-base", columnasBase());
 
     const columnas = [];
     const alturas = [];
@@ -168,13 +226,24 @@ function construirRejilla(items, crearPieza, base = 0) {
       alturas.push((desfasesVh[c] ?? 0) / 55);
     }
 
-    // A la columna más corta hasta el momento: con alturas reales (no sólo
-    // el índice) ninguna se queda muy por detrás de las demás.
+    /* A la columna más corta hasta el momento: con alturas reales (no sólo
+       el índice) ninguna se queda muy por detrás de las demás.
+       El tope por columna es lo que cierra el bloque: sin él, una pieza algo
+       más baja que las demás podía llevarse dos huecos a la misma columna y
+       dejar otra corta aunque el número de piezas cuadrase. */
+    const maxPorColumna = Math.ceil(cola.length / n);
+    const cuentas = new Array(n).fill(0);
+
     cola.forEach(({ p, i }) => {
-      let destino = 0;
-      for (let c = 1; c < n; c++) if (alturas[c] < alturas[destino]) destino = c;
+      let destino = -1;
+      for (let c = 0; c < n; c++) {
+        if (cuentas[c] >= maxPorColumna) continue;
+        if (destino === -1 || alturas[c] < alturas[destino]) destino = c;
+      }
+      if (destino === -1) destino = 0;
       columnas[destino].appendChild(crearPieza(p, base + i));
       alturas[destino] += alturaEstimada(p) + GAP;
+      cuentas[destino]++;
     });
 
     frag.appendChild(rejilla);

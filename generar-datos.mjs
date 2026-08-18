@@ -86,6 +86,28 @@ function titular(archivo) {
 const seguro = (s) => s.replace(/[^\w.\-]+/g, "_");
 
 const RUTA_ORDEN = path.join(RAIZ, "orden.txt");
+const RUTA_TITULOS = path.join(RAIZ, "titulos.txt");
+
+/* titulos.txt: "ruta dentro de /videos = Título que se ve en la web".
+   Sirve para que el nombre del archivo y el rótulo no tengan que coincidir:
+   así varios vídeos de un mismo cliente pueden salir todos con el mismo
+   nombre (REPLIK HAIR STUDIO, LA COLORÁ…) sin renombrar los archivos ni
+   tener que regenerar y volver a subir lo que ya estaba hecho. */
+async function leerTitulos() {
+  const mapa = new Map();
+  if (!(await existe(RUTA_TITULOS))) return mapa;
+  const texto = await readFile(RUTA_TITULOS, "utf8");
+  for (const linea of texto.split("\n")) {
+    const limpia = linea.split("#")[0].trim();
+    if (!limpia) continue;
+    const i = limpia.indexOf("=");
+    if (i < 1) continue;
+    const ruta = limpia.slice(0, i).trim().replace(/\\/g, "/").toLowerCase();
+    const titulo = limpia.slice(i + 1).trim();
+    if (ruta && titulo) mapa.set(ruta, titulo);
+  }
+  return mapa;
+}
 
 /* orden.txt: una ruta relativa dentro de /videos por línea, en el orden en
    que se quiere que aparezcan los vídeos por la web. Las líneas vacías o
@@ -105,13 +127,9 @@ async function leerOrdenManual() {
 /* Si no existe orden.txt, se crea uno con el orden actual (el que sale del
    barajado automático) como plantilla ya lista para editar: basta con
    mover líneas de sitio y volver a lanzar el generador. */
-async function escribirPlantillaOrden(proyectosOrdenados, items) {
-  const rutaPorTituloCat = new Map(
-    items.map((it) => [rotular(it.categoria) + "|" + titular(it.archivo), it.rel])
-  );
-  const lineas = proyectosOrdenados
-    .map((p) => rutaPorTituloCat.get(p.categoria + "|" + p.titulo))
-    .filter(Boolean);
+async function escribirPlantillaOrden(relsOrdenadas, items) {
+  const reales = new Map(items.map((it) => [it.rel.toLowerCase(), it.rel]));
+  const lineas = relsOrdenadas.map((r) => reales.get(r)).filter(Boolean);
 
   const contenido =
     `# Orden manual de los vídeos en la web.\n` +
@@ -283,6 +301,9 @@ if (!items.length) {
   console.log("Mete tus archivos en carpetas por categoría, p. ej. videos/Bodas/…\n");
 }
 
+const titulos = await leerTitulos();
+if (titulos.size) console.log(`✓ titulos.txt: ${titulos.size} rótulos personalizados`);
+
 const proyectos = [];
 for (const item of items) {
   const { w, h } = await dimensiones(item.abs);
@@ -292,7 +313,7 @@ for (const item of items) {
   const completo = ligero || "videos/" + item.rel.split("/").map(encodeURIComponent).join("/");
 
   proyectos.push({
-    titulo: titular(item.archivo),
+    titulo: titulos.get(item.rel.toLowerCase()) || titular(item.archivo),
     categoria: rotular(item.categoria),
     video: completo,                            // el bueno, con sonido, para el reproductor
     preview: await previa(item, ffmpeg, ligero), // el ligero, mudo, para la rejilla
@@ -326,12 +347,16 @@ if (orden) {
 } else {
   proyectosOrdenados = [...proyectos].sort(barajaEstable);
 }
+// El orden final en rutas reales, antes de soltar el campo interno. Ojo:
+// ahora los títulos pueden repetirse (varios vídeos del mismo cliente), así
+// que la plantilla se construye con las rutas, no emparejando por título.
+const relsOrdenadas = proyectosOrdenados.map((p) => p._rel);
 proyectosOrdenados.forEach((p) => delete p._rel);
 
 // Si no existe orden.txt, se crea uno con el orden actual como plantilla:
 // así siempre hay un archivo listo para reordenar a mano moviendo líneas.
 if (!orden && proyectosOrdenados.length) {
-  await escribirPlantillaOrden(proyectosOrdenados, items);
+  await escribirPlantillaOrden(relsOrdenadas, items);
 }
 
 // =========================================================

@@ -103,6 +103,35 @@ Este orden es también el que se usa para decidir dónde parte el ciclo en dos
 moviendo vídeos de sitio en `orden.txt` también puedes influir en qué hueco
 queda más pequeño, si alguna vez quieres afinarlo más que el propio generador.
 
+### Que la rejilla no deje huecos
+
+La rejilla cierra a ras cuando cada bloque de vídeos verticales tiene un
+número de piezas que cuadra con las columnas (3 en escritorio, 2 en móvil).
+Los bloques los separan el nombre grande del centro y los vídeos apaisados,
+que ocupan una fila entera ellos solos.
+
+Regla práctica: **procura que cada bloque tenga un número par de vídeos**, y
+mejor aún si es múltiplo de 6 (cuadra con 3 y con 2 columnas a la vez). Si un
+bloque no cuadra con 3, se pinta con 2 columnas pero estrechado y centrado,
+así las piezas siguen midiendo lo mismo que las demás. La cabecera de
+`orden.txt` explica cómo están repartidos ahora mismo.
+
+### Cambiar el nombre que se ve sin tocar los archivos
+
+**`titulos.txt`** separa el nombre del ARCHIVO del rótulo que se VE:
+
+```
+NEGOCIOS/Replik Hair Studio 1.mp4 = REPLIK HAIR STUDIO
+NEGOCIOS/Replik Hair Studio 2.mp4 = REPLIK HAIR STUDIO
+DEPORTES/Padel.mp4                = LORENA
+```
+
+Sirve para dos cosas: que **varios vídeos de un mismo cliente salgan todos
+con el mismo rótulo**, y para renombrar sin renombrar el archivo (si
+renombras el original hay que volver a comprimirlo y a subirlo a Cloudflare;
+así no). Lo que no aparezca en la lista usa el nombre del archivo, como
+siempre. Después de tocarlo: `node generar-datos.mjs`.
+
 ---
 
 ## 2. La sección de fotos

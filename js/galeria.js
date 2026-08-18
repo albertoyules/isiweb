@@ -51,7 +51,7 @@
 
     const marco = document.createElement("div");
     marco.className = "marco";
-    marco.style.setProperty("--ar", p.ar || "4 / 5");
+    marco.style.setProperty("--ar", arDeRejilla(p));
 
     if (tipo === "fotos") {
       const img = document.createElement("img");
@@ -101,7 +101,10 @@
       return;
     }
 
-    contenedor.appendChild(construirRejilla(items, crearPieza));
+    // Sólo el vídeo se unifica; las fotos conservan su formato original.
+    contenedor.appendChild(
+      construirRejilla(tipo === "fotos" ? items : unificarVerticales(items), crearPieza)
+    );
   }
 
   // =========================================================
@@ -282,11 +285,19 @@
           })))
           .concat([{ etiqueta: "Fotos", url: "fotos.html", activo: false }]);
 
+    // Mismas dos salidas que en la portada: desde el móvil, el menú de abajo
+    // es lo único que se tiene siempre a mano para cambiar de página.
+    opciones.push(
+      { etiqueta: "Sobre mí", url: "sobre-mi.html", aparte: true },
+      { etiqueta: "Contacto", url: "contacto.html" }
+    );
+
     opciones.forEach((o) => {
       const a = document.createElement("a");
       a.textContent = o.etiqueta;
       a.href = o.url;
       if (o.activo) a.className = "activo";
+      if (o.aparte) a.classList.add("aparte");
       barra.appendChild(a);
     });
   }
