@@ -31,25 +31,27 @@ function medio(ruta, opciones) {
   return v ? url + (url.includes("?") ? "&" : "?") + "v=" + v : url;
 }
 
-/* Asigna la fuente. El "preload" es a propósito distinto según si la pieza
-   ya se ve o si sólo está cerca:
-     - "auto"     → lo que ya está en pantalla y va a reproducirse YA. Sin
-                    esto un vídeo pausado se queda a medias y al entrar en
-                    pantalla hay que esperar a que termine: es el tirón que
-                    se evitaba antes.
-     - "metadata" → lo que sólo está cerca, en cola por si hace falta pronto.
-                    Antes también pedían preload="auto" TODOS los que
-                    estuvieran cerca, y con muchos vídeos "cerca" a la vez
-                    (normal en una rejilla de piezas altas y apretadas en
-                    móvil) eso competía por ancho de banda con lo que de
-                    verdad importaba: lo que ya se está viendo. Con
-                    "metadata" sólo se piden las cabeceras (duración,
-                    dimensiones) y el navegador no se lanza a bajárselo
-                    entero — se comprobó en una web hermana (cristiyules.com)
-                    que este es justo el patrón que le funciona en móvil. */
-function cargar(video, prioridad) {
+/* Asigna la fuente y pide al navegador que la descargue del todo.
+   Sin preload="auto" un vídeo pausado se queda a medias y, cuando entra en
+   pantalla, hay que esperar a que termine: es lo que se notaba como tirón.
+
+   OJO — esto se probó con preload="metadata" para lo que sólo estaba cerca
+   (no en pantalla todavía), pensando que aliviaría el ancho de banda en
+   móvil. En el simulador de escritorio parecía funcionar, pero comprobado
+   con el Inspector Web conectado a un iPhone real: Safari en iOS con
+   preload="metadata" pide un primer byte del vídeo (una sonda para leer
+   duración/códec) Y SE QUEDA AHÍ, sin seguir bajando nada más por su
+   cuenta — a diferencia del motor de escritorio, que sí continuaba. El
+   vídeo se queda con ~1 byte descargado para siempre y nunca hay nada que
+   reproducir. Por eso tocar un vídeo SÍ funcionaba (algo.play() fuerza la
+   descarga completa de un tirón) pero el autoplay de la rejilla no.
+   preload="auto" en TODO lo que se pide es lo único que se ha comprobado
+   que funciona de verdad en un iPhone real; el resto de arreglos (pósters
+   diferidos y same-origin, menos descargas simultáneas en móvil) ya
+   recortan bastante el atasco sin tocar esto. */
+function cargar(video) {
   if (!video || video.src || !video.dataset.src) return;
-  video.preload = prioridad ? "auto" : "metadata";
+  video.preload = "auto";
   video.src = video.dataset.src;
   video.load();
 }

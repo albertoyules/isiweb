@@ -169,7 +169,7 @@
 
         if (cerca) {
           if (!v.src && v.dataset.src) {
-            if (enPantalla) cargar(v, true);      // lo que se ve no espera turno, y va con preload="auto"
+            if (enPantalla) cargar(v);            // lo que se ve no espera turno
             else porCargar.push({ v, dist });
           }
           if (enPantalla) candidatos.push({ el, v, dist });

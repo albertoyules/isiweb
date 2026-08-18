@@ -413,7 +413,7 @@
 
       if (cerca) {
         if (!p.video.src && p.video.dataset.src) {
-          if (enPantalla) cargar(p.video, true);  // lo que se ve no espera turno, y va con preload="auto"
+          if (enPantalla) cargar(p.video);        // lo que se ve no espera turno
           else porCargar.push({ p, dist });
         }
         if (enPantalla) candidatos.push({ p, dist });
