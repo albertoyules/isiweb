@@ -8,11 +8,11 @@ const CONFIG = {
   lema: "Videógrafo y director de fotografía.",
 
   contacto: {
-    email: "hola@isidrogonzalez.com",
-    telefono: "+34 600 000 000",
+    email: "Isiglez01@gmail.com",
+    telefono: "+34 637 17 75 24",
     ciudad: "Madrid, España",
-    instagram: "https://instagram.com/",
-    vimeo: "https://vimeo.com/",
+    instagram: "https://www.instagram.com/isiigonzalez_/",
+    vimeo: "",
     youtube: "",
   },
 
