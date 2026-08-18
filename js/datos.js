@@ -1,10 +1,10 @@
 /* =========================================================
    ARCHIVO GENERADO AUTOMÁTICAMENTE — no lo edites a mano.
    Regenéralo con:  node generar-datos.mjs
-   Generado: 2026-08-18 22:14
+   Generado: 2026-08-18 22:15
    ========================================================= */
 
-const MEDIA_V = "msz809s5";
+const MEDIA_V = "msz81q3t";
 
 const PROYECTOS = [
   {
@@ -277,11 +277,5 @@ const FOTOS = [
     "categoria": "Deportes",
     "imagen": "fotos-web/DEPORTES/Partido%2014.jpg",
     "ar": "2439 / 3061"
-  },
-  {
-    "titulo": "Partido 15",
-    "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2015.jpg",
-    "ar": "311 / 384"
   }
 ];
