@@ -97,7 +97,7 @@
          dataset y se pide sólo cuando la pieza está cerca de la pantalla
          (ver cargarPoster en actualizarMedios), igual que ya se hacía con
          el vídeo. */
-      if (p.poster) v.dataset.poster = medio(p.poster);
+      if (p.poster) v.dataset.poster = medio(p.poster, { sinCdn: true });
       // En la rejilla va la previa ligera; el archivo bueno se reserva
       // para el reproductor, que es donde se ve a pantalla completa.
       v.dataset.src = medio(CONFIG.calidadRejilla === "completa" ? p.video : (p.preview || p.video));
@@ -413,7 +413,7 @@
 
       if (cerca) {
         if (!p.video.src && p.video.dataset.src) {
-          if (enPantalla) cargar(p.video);        // lo que se ve no espera turno
+          if (enPantalla) cargar(p.video, true);  // lo que se ve no espera turno, y va con preload="auto"
           else porCargar.push({ p, dist });
         }
         if (enPantalla) candidatos.push({ p, dist });

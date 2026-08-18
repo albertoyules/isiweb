@@ -74,7 +74,7 @@
       // Igual que en la portada: el póster se pide cuando la pieza está
       // cerca (ver cargarPoster en revisar()), no de golpe con las 20-30
       // piezas de la página al abrirla — eso es lo que la atascaba en 4G.
-      if (p.poster) v.dataset.poster = medio(p.poster);
+      if (p.poster) v.dataset.poster = medio(p.poster, { sinCdn: true });
       v.dataset.src = medio(CONFIG.calidadRejilla === "completa" ? p.video : (p.preview || p.video));
       marco.appendChild(v);
     }
@@ -169,7 +169,7 @@
 
         if (cerca) {
           if (!v.src && v.dataset.src) {
-            if (enPantalla) cargar(v);            // lo que se ve no espera turno
+            if (enPantalla) cargar(v, true);      // lo que se ve no espera turno, y va con preload="auto"
             else porCargar.push({ v, dist });
           }
           if (enPantalla) candidatos.push({ el, v, dist });

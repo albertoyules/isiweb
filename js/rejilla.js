@@ -12,21 +12,44 @@
    - Si CONFIG.cdn está definido, se sirve desde allí.
    - Se le añade la versión que escribe el generador, para que al regenerar
      los vídeos el navegador no siga mostrando los de la caché. */
-function medio(ruta) {
+function medio(ruta, opciones) {
   if (!ruta) return "";
   if (/^https?:/i.test(ruta)) return ruta;
-  const base = (CONFIG.cdn || "").replace(/\/$/, "");
+  /* Los pósters se quedan en el MISMO dominio que la página (Vercel), sin
+     pasar por el CDN de Cloudflare. Se comprobó contra una web hermana
+     (cristiyules.com) que sí carga bien en móvil: sus pósters van
+     same-origin y sólo el vídeo pesado va al CDN. Tiene sentido — un
+     dominio nuevo significa una conexión TLS nueva desde cero (DNS +
+     handshake), y eso cuesta cientos de ms en una 4G floja, justo para la
+     imagen que más importa: la que se ve primero, antes de que cargue
+     nada más. Los pósters ya viajan con el propio despliegue (carpeta
+     posters/ está en git), así que no hace falta el CDN para ellos. */
+  const sinCdn = opciones && opciones.sinCdn;
+  const base = sinCdn ? "" : (CONFIG.cdn || "").replace(/\/$/, "");
   const url = base ? base + "/" + ruta : ruta;
   const v = typeof MEDIA_V !== "undefined" ? MEDIA_V : "";
   return v ? url + (url.includes("?") ? "&" : "?") + "v=" + v : url;
 }
 
-/* Asigna la fuente y pide al navegador que la descargue del todo.
-   Sin preload="auto" un vídeo pausado se queda a medias y, cuando entra en
-   pantalla, hay que esperar a que termine: es lo que se notaba como tirón. */
-function cargar(video) {
+/* Asigna la fuente. El "preload" es a propósito distinto según si la pieza
+   ya se ve o si sólo está cerca:
+     - "auto"     → lo que ya está en pantalla y va a reproducirse YA. Sin
+                    esto un vídeo pausado se queda a medias y al entrar en
+                    pantalla hay que esperar a que termine: es el tirón que
+                    se evitaba antes.
+     - "metadata" → lo que sólo está cerca, en cola por si hace falta pronto.
+                    Antes también pedían preload="auto" TODOS los que
+                    estuvieran cerca, y con muchos vídeos "cerca" a la vez
+                    (normal en una rejilla de piezas altas y apretadas en
+                    móvil) eso competía por ancho de banda con lo que de
+                    verdad importaba: lo que ya se está viendo. Con
+                    "metadata" sólo se piden las cabeceras (duración,
+                    dimensiones) y el navegador no se lanza a bajárselo
+                    entero — se comprobó en una web hermana (cristiyules.com)
+                    que este es justo el patrón que le funciona en móvil. */
+function cargar(video, prioridad) {
   if (!video || video.src || !video.dataset.src) return;
-  video.preload = "auto";
+  video.preload = prioridad ? "auto" : "metadata";
   video.src = video.dataset.src;
   video.load();
 }
