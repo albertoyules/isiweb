@@ -37,13 +37,18 @@ const CONFIG = {
     /* En móvil ese mismo margen de "2 pantallas" cubre buena parte de la
        rejilla entera (las piezas son más altas que anchas y van apretadas),
        así que de entrada ya había 15-20 vídeos y pósters compitiendo por la
-       conexión — en wifi no se nota, pero en un 4G real eso lo atasca todo
-       y da la sensación de que nada carga solo. Con menos antelación en
-       móvil, lo primero que se ve gana la conexión para él. */
-    anticipacionMovil: 0.6,
+       conexión — en wifi no se nota, pero en un 4G real eso lo atasca todo.
+       OJO: no bajar esto de ~1.0. Con 0.6 se probó y algunas piezas del
+       final de cada bloque quedaban justo fuera del margen en la posición
+       inicial (antes de que el usuario toque nada) y, como la comprobación
+       de qué está "cerca" sólo se repite cuando algo se mueve, se quedaban
+       en blanco PARA SIEMPRE si nadie hacía scroll — no es que tardaran,
+       es que no llegaban a pedirse nunca. Con 1.2 ya cubre sobradamente lo
+       que se ve nada más abrir, sin volver a las 46 peticiones de golpe. */
+    anticipacionMovil: 1.2,
     olvido: 6.0,        // pantallas de distancia a las que se suelta el archivo
     descargasALaVez: 6, // descargas simultáneas como mucho
-    descargasALaVezMovil: 3,
+    descargasALaVezMovil: 4,
     autoplayMovil: 2,   // nº máximo de vídeos reproduciéndose a la vez en móvil
     autoplayEscritorio: 8,
   },

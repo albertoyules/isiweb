@@ -261,6 +261,24 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
   gap: 12px;
 }
 
+/* Como el scroll es virtual, cualquier vídeo o texto puede acabar pasando
+   justo por debajo del botón flotante de abajo — en el móvil, con la
+   rejilla apretada, un rótulo de dos líneas como "REPLIK HAIR STUDIO"
+   podía quedar cortado a media palabra justo detrás del botón, y parecía
+   un fallo de maquetación. Este degradado apaga el contenido ANTES de
+   llegar al botón en vez de cortarlo en seco. No usa position:fixed propio
+   ni interfiere con los toques: sólo pinta. */
+.desvanecido-inferior {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  z-index: 40;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--bg) 0%, var(--bg) 20%, transparent 100%);
+}
+
 .filtros {
   display: flex;
   align-items: center;
