@@ -1,10 +1,10 @@
 /* =========================================================
    ARCHIVO GENERADO AUTOMÁTICAMENTE — no lo edites a mano.
    Regenéralo con:  node generar-datos.mjs
-   Generado: 2026-08-18 21:40
+   Generado: 2026-08-18 22:14
    ========================================================= */
 
-const MEDIA_V = "msz6s5zd";
+const MEDIA_V = "msz809s5";
 
 const PROYECTOS = [
   {
@@ -136,7 +136,7 @@ const PROYECTOS = [
     "ar": "9 / 16"
   },
   {
-    "titulo": "Pepe Peluqueria",
+    "titulo": "REPLIK HAIR STUDIO",
     "categoria": "Negocios",
     "video": "videos-web/NEGOCIOS/Pepe%20Peluqueria.mp4",
     "preview": "previews/NEGOCIOS_Pepe%20Peluqueria.mp4",

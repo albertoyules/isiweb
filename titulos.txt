@@ -10,12 +10,13 @@
 # Lo que no aparezca aquí usa el nombre del archivo, como siempre.
 # Después de tocar este archivo:  node generar-datos.mjs
 
-# --- Peluquería (5 vídeos, todos con el mismo nombre) ---
+# --- Peluquería (6 vídeos, todos con el mismo nombre) ---
 NEGOCIOS/Replik Hair Studio 1.mp4 = REPLIK HAIR STUDIO
 NEGOCIOS/Replik Hair Studio 2.mp4 = REPLIK HAIR STUDIO
 NEGOCIOS/Replik Hair Studio 3.mp4 = REPLIK HAIR STUDIO
 NEGOCIOS/Replik Hair Studio 4.mp4 = REPLIK HAIR STUDIO
 NEGOCIOS/Replik Hair Studio 5.mp4 = REPLIK HAIR STUDIO
+NEGOCIOS/Pepe Peluqueria.mp4      = REPLIK HAIR STUDIO
 
 # --- La Colorá (3 vídeos, todos con el mismo nombre) ---
 PUBLICIDAD/La Colora 1.mp4 = LA COLORÁ
