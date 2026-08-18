@@ -88,7 +88,16 @@
       v.setAttribute("webkit-playsinline", "");
       v.preload = "none";
       v.disablePictureInPicture = true;
-      if (p.poster) v.poster = medio(p.poster);
+      /* El póster NO se asigna aquí. Antes se ponía de golpe al construir
+         cada pieza, así que con 46 piezas en pantalla (rejilla + clones) la
+         página arrancaba pidiendo 20-30 imágenes A LA VEZ, nada más cargar,
+         compitiendo por ancho de banda con los vídeos que sí importa que
+         lleguen pronto. En wifi no se nota, pero en un 4G real eso lo
+         atasca todo y da la sensación de que nada carga. Se guarda en
+         dataset y se pide sólo cuando la pieza está cerca de la pantalla
+         (ver cargarPoster en actualizarMedios), igual que ya se hacía con
+         el vídeo. */
+      if (p.poster) v.dataset.poster = medio(p.poster);
       // En la rejilla va la previa ligera; el archivo bueno se reserva
       // para el reproductor, que es donde se ve a pantalla completa.
       v.dataset.src = medio(CONFIG.calidadRejilla === "completa" ? p.video : (p.preview || p.video));
@@ -358,11 +367,17 @@
     // Empezamos a descargar dos pantallas antes de que se vea, y no soltamos
     // el archivo hasta estar muy lejos: así al salir del hueco del nombre los
     // vídeos ya están listos y no hay ese parón de "se queda pillado".
-    const margenCarga = vh * CONFIG.scroll.anticipacion;
+    const movil = esMovil();
+    const margenCarga = vh * (movil
+      ? (CONFIG.scroll.anticipacionMovil ?? CONFIG.scroll.anticipacion)
+      : CONFIG.scroll.anticipacion);
     const margenDescarga = vh * CONFIG.scroll.olvido;
-    const maxJugando = esMovil()
+    const maxJugando = movil
       ? CONFIG.scroll.autoplayMovil
       : CONFIG.scroll.autoplayEscritorio;
+    const maxDescargas = movil
+      ? (CONFIG.scroll.descargasALaVezMovil ?? CONFIG.scroll.descargasALaVez)
+      : CONFIG.scroll.descargasALaVez;
 
     const candidatos = [];   // en pantalla: compiten por reproducirse
     const porCargar = [];    // cerca: compiten por descargarse
@@ -386,6 +401,10 @@
       }
 
       if (!p.video) continue;
+
+      // El póster sigue la misma regla de cercanía que el vídeo: así no
+      // compite con él por ancho de banda cuando aún falta para verse.
+      if (cerca) cargarPoster(p.video);
 
       // NETWORK_LOADING (2) = está bajando datos ahora mismo. Antes miraba
       // readyState, pero un vídeo pausado fuera de pantalla nunca llega a 3
@@ -413,7 +432,7 @@
     // peticiones a la vez se pelean por el ancho de banda y no llega ninguna.
     porCargar.sort((a, b) => a.dist - b.dist);
     for (const { p } of porCargar) {
-      if (cargando >= CONFIG.scroll.descargasALaVez) break;
+      if (cargando >= maxDescargas) break;
       cargar(p.video);
       cargando++;
     }

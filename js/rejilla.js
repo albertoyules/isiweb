@@ -31,6 +31,13 @@ function cargar(video) {
   video.load();
 }
 
+/* Pide el póster sólo cuando hace falta (ver por qué en crearPieza, app.js
+   y galeria.js). Ligero: sólo hay que asignarlo, sin tocar preload/load. */
+function cargarPoster(video) {
+  if (!video || video.poster || !video.dataset.poster) return;
+  video.poster = video.dataset.poster;
+}
+
 /* Estados del reproductor: mientras carga muestra un giro, y si falla dice
    POR QUÉ falla en vez de quedarse en negro sin explicación. */
 function vigilarCarga(visor, video) {

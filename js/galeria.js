@@ -71,7 +71,10 @@
       v.setAttribute("webkit-playsinline", "");
       v.preload = "none";
       v.disablePictureInPicture = true;
-      if (p.poster) v.poster = medio(p.poster);
+      // Igual que en la portada: el póster se pide cuando la pieza está
+      // cerca (ver cargarPoster en revisar()), no de golpe con las 20-30
+      // piezas de la página al abrirla — eso es lo que la atascaba en 4G.
+      if (p.poster) v.dataset.poster = medio(p.poster);
       v.dataset.src = medio(CONFIG.calidadRejilla === "completa" ? p.video : (p.preview || p.video));
       marco.appendChild(v);
     }
@@ -125,9 +128,16 @@
 
     if (tipo === "fotos" || reduceMovimiento) return;
 
-    const maxJugando = esMovil()
+    const movil = esMovil();
+    const maxJugando = movil
       ? CONFIG.scroll.autoplayMovil
       : CONFIG.scroll.autoplayEscritorio;
+    const maxDescargas = movil
+      ? (CONFIG.scroll.descargasALaVezMovil ?? CONFIG.scroll.descargasALaVez)
+      : CONFIG.scroll.descargasALaVez;
+    const anticipacion = movil
+      ? (CONFIG.scroll.anticipacionMovil ?? CONFIG.scroll.anticipacion)
+      : CONFIG.scroll.anticipacion;
 
     const pagina = document.querySelector(".pagina") || window;
     let pendiente = false;
@@ -149,11 +159,12 @@
         const r = el.getBoundingClientRect();
         const dist = Math.abs(r.top + r.height / 2 - vh / 2);
         const enPantalla = r.top < vh && r.bottom > 0;
-        const cerca = r.top < vh * (1 + CONFIG.scroll.anticipacion) &&
-                      r.bottom > -vh * CONFIG.scroll.anticipacion;
+        const cerca = r.top < vh * (1 + anticipacion) &&
+                      r.bottom > -vh * anticipacion;
         const lejos = r.top > vh * (1 + CONFIG.scroll.olvido) ||
                       r.bottom < -vh * CONFIG.scroll.olvido;
 
+        if (cerca) cargarPoster(v);
         if (v.networkState === 2) cargando++;   // NETWORK_LOADING
 
         if (cerca) {
@@ -172,7 +183,7 @@
       // De pocas en pocas y por cercanía, para no ahogar el ancho de banda
       porCargar.sort((a, b) => a.dist - b.dist);
       for (const { v } of porCargar) {
-        if (cargando >= CONFIG.scroll.descargasALaVez) break;
+        if (cargando >= maxDescargas) break;
         cargar(v);
         cargando++;
       }

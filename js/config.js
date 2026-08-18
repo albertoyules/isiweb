@@ -34,8 +34,16 @@ const CONFIG = {
     paralaje: 0.04,     // desplazamiento interno del vídeo dentro del marco
     deriva: 0,          // 0 = sólo se mueve si lo mueves tú; 0.2 = va solo
     anticipacion: 2.0,  // pantallas de antelación con que se empieza a descargar
+    /* En móvil ese mismo margen de "2 pantallas" cubre buena parte de la
+       rejilla entera (las piezas son más altas que anchas y van apretadas),
+       así que de entrada ya había 15-20 vídeos y pósters compitiendo por la
+       conexión — en wifi no se nota, pero en un 4G real eso lo atasca todo
+       y da la sensación de que nada carga solo. Con menos antelación en
+       móvil, lo primero que se ve gana la conexión para él. */
+    anticipacionMovil: 0.6,
     olvido: 6.0,        // pantallas de distancia a las que se suelta el archivo
     descargasALaVez: 6, // descargas simultáneas como mucho
+    descargasALaVezMovil: 3,
     autoplayMovil: 2,   // nº máximo de vídeos reproduciéndose a la vez en móvil
     autoplayEscritorio: 8,
   },
