@@ -458,15 +458,30 @@
 
       if (v.paused) { v.play().catch(() => {}); continue; }
 
+      if (v.currentTime > 0) p.arrancado = true;
+
       if (v.currentTime === p.ultimoT) {
-        p.clavado = (p.clavado || 0) + 1;
-        if (p.clavado >= 2) {
-          const src = v.src;
-          v.removeAttribute("src");
-          v.load();
-          v.src = src;
-          v.play().catch(() => {});
-          p.clavado = 0;
+        /* Antes de arrancar (todavía bajando el primer fotograma) esto no
+           está "clavado", sólo tarda — sobre todo en una 4G floja, donde
+           puede llevar varios segundos. Reiniciar la descarga en ese punto
+           tira lo ya bajado a la basura y empieza de cero otra vez: visto
+           con el Inspector Web en un iPhone real, esto es justo lo que
+           pasaba — el mismo vídeo pedido 2-3 veces, ninguna llegando a
+           completarse nunca. Sólo se reinicia si YA había arrancado a
+           reproducirse y se ha quedado congelado a medias (el caso real
+           que esto intenta arreglar: Safari decodificando demasiados
+           vídeos a la vez y alguno se cuelga en marcha). */
+        if (p.arrancado) {
+          p.clavado = (p.clavado || 0) + 1;
+          if (p.clavado >= 2) {
+            const src = v.src;
+            v.removeAttribute("src");
+            v.load();
+            v.src = src;
+            v.play().catch(() => {});
+            p.clavado = 0;
+            p.arrancado = false;
+          }
         }
       } else {
         p.clavado = 0;

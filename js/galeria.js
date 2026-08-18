@@ -198,19 +198,27 @@
     }
 
     /* Safari limita los decodificadores simultáneos y algún vídeo se queda
-       clavado en el póster. Aquí se comprueba y se reintenta. */
+       clavado en marcha. Aquí se comprueba y se reintenta — pero sólo si YA
+       había arrancado a reproducirse: mientras baja el primer fotograma
+       (currentTime todavía en 0) no está clavado, sólo tarda, y reiniciar
+       ahí tira lo ya descargado y empieza de cero sin acabar nunca (visto
+       con el Inspector Web en un iPhone real: el mismo vídeo pedido 2-3
+       veces, ninguna completándose). */
     setInterval(() => {
       piezas.forEach((el) => {
         const v = el.querySelector("video");
         if (!v || el.dataset.debe !== "1" || !v.src) return;
         if (v.paused) { v.play().catch(() => {}); return; }
+        if (v.currentTime > 0) el.dataset.arrancado = "1";
         if (v.currentTime === +el.dataset.t) {
+          if (el.dataset.arrancado !== "1") return;
           el.dataset.clavado = (+el.dataset.clavado || 0) + 1;
           if (+el.dataset.clavado >= 2) {
             const src = v.src;
             v.removeAttribute("src"); v.load();
             v.src = src; v.play().catch(() => {});
             el.dataset.clavado = 0;
+            el.dataset.arrancado = "";
           }
         } else {
           el.dataset.clavado = 0;
