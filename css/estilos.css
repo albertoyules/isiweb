@@ -188,7 +188,15 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 .pieza {
   opacity: 0;
   transform: translate3d(0, 40px, 0);
-  transition: opacity 0.25s linear, transform 1.25s var(--ease-out);
+  /* La opacidad y el desplazamiento duraban distinto (0,25s vs 1,25s): la
+     pieza se veía ya del todo opaca mientras SEGUÍA a medio deslizar, y con
+     un hueco entre filas de sólo ~42px en móvil (5vh), esos 40px de
+     desplazamiento se comían casi todo el hueco — la pieza opaca invadía
+     un instante la fila de al lado antes de asentarse. Se notaba sobre todo
+     en el punto donde una vuelta del bucle acaba y empieza la siguiente
+     (ahí no hay separación visual, a diferencia del bloque del nombre).
+     Con la misma duración para las dos, la pieza aparece ya en su sitio. */
+  transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
 }
 .pieza.visible { opacity: 1; transform: none; }
 
