@@ -46,6 +46,40 @@ añadir un vídeo a una carpeta de veinte sólo trabaja con ese.
 > existiendo y están explicados más abajo, por si algún día hace falta
 > ejecutar sólo uno.
 
+### Cómo preparar los vídeos antes de meterlos
+
+Cinco cosas. Si se respetan, no hay que tocar nada más:
+
+**1. Ponles nombre antes de copiarlos.** El rótulo que sale en la web es el
+nombre del archivo. `Boda Ana y Luis.mp4` → «Boda Ana y Luis». Un `IMG_8512.MOV`
+saldrá como «IMG 8512», que queda fatal. (Si hay que cambiar un rótulo cuando ya
+está subido, se hace en `titulos.txt` sin renombrar el archivo — así no hay que
+volver a comprimirlo ni subirlo.)
+
+**2. Una carpeta por categoría, y en mayúsculas.** `videos/DEPORTES/`,
+`videos/NEGOCIOS/`. El nombre de la carpeta es el que sale en el botón
+**Filtrar**, y se muestra como «Deportes». Crear una carpeta nueva crea una
+categoría nueva, sin tocar código.
+
+**3. Recorta a 6–12 segundos lo que vaya a la rejilla.** No hace falta: el
+generador saca solo un fragmento de 6 s para el bucle. Pero elige desde el 15%
+del clip, así que si el momento bueno está al final, mejor recortarlo antes.
+
+**4. Verticales, mejor todos en 9/16.** La rejilla iguala las proporciones para
+que las columnas cierren a la par. Un vídeo apaisado (16/9) no es problema:
+rompe la rejilla a propósito y ocupa una fila entera él solo.
+
+**5. Mejor de seis en seis.** La rejilla queda sin huecos cuando cada bloque de
+vídeos verticales tiene un número de piezas múltiplo de 6 (cuadra con 3 columnas
+en ordenador y con 2 en móvil). No es obligatorio y no se rompe nada si no
+cuadra, pero se nota.
+
+**Da igual lo que pesen.** Se pueden meter los originales de cámara tal cual, de
+900 MB si hace falta: el script hace las copias ligeras y **los originales nunca
+se suben a internet** (están fuera del repositorio a propósito). Lo único que
+cuesta es tiempo de compresión, alrededor de un minuto por vídeo, y no hay que
+estar delante.
+
 ---
 
 ## 1. Poner tus vídeos
