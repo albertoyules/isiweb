@@ -19,7 +19,6 @@
       .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   const esMovil = () => window.matchMedia("(max-width: 600px)").matches;
-  const reduceMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const tipo = document.body.dataset.galeria || "videos";
   const contenedor = document.querySelector(".galeria");
@@ -122,7 +121,13 @@
     );
     piezas.forEach((el) => io.observe(el));
 
-    if (tipo === "fotos" || reduceMovimiento) return;
+    /* Igual que en la portada (ver el comentario largo en app.js, en la
+       línea de `debe`): con "Reducir movimiento" activado en el iPhone,
+       este `return` se llevaba por delante TODA la gestión de vídeo de las
+       páginas de categoría — ni se cargaban ni se reproducían. La animación
+       decorativa se sigue respetando; el vídeo, que aquí es el contenido,
+       no. Las páginas de fotos sí salen por aquí: no tienen vídeo. */
+    if (tipo === "fotos") return;
 
     const movil = esMovil();
     const maxJugando = movil

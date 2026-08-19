@@ -1,5 +1,42 @@
 # Diagnóstico: los vídeos de la rejilla no se reproducen solos en iPhone (Safari)
 
+> ## RESUELTO — era "Reducir movimiento"
+>
+> **La causa: el iPhone tenía activado Ajustes → Accesibilidad → Movimiento →
+> Reducir movimiento.** El código preguntaba por `prefers-reduced-motion` y,
+> si estaba puesto, no reproducía NINGÚN vídeo (`js/app.js`, en la línea de
+> `debe`, y `js/galeria.js`, un `return` al principio de `observar()`).
+>
+> Por qué costó dos horas encontrarlo: no daba ni un error. Los vídeos se
+> descargaban ENTEROS y correctos, el póster se veía, tocar para abrir el
+> reproductor funcionaba... simplemente nadie llegaba a dar la orden de
+> reproducir. Y ninguna prueba lo cazó porque ni el Mac ni Playwright tenían
+> esa opción puesta — hay que pedirla a propósito (`reducedMotion: "reduce"`).
+>
+> Lo que lo destapó fue el panel `?depurar`: `rs4 ns1 buf 6.0 mudo -> -`.
+> Traducido: vídeo descargado del todo (6 s en el búfer), sin errores, mudo
+> como debe ser, y `-> -` (motivo vacío) = **`reproducir()` no se ha llamado
+> nunca**. Con eso el problema dejó de estar en iOS y pasó a estar en cuatro
+> líneas nuestras.
+>
+> Medido con Playwright + WebKit móvil, forzando la opción:
+>
+> | | código anterior | corregido |
+> |---|---|---|
+> | Reducir movimiento ON | **0 vídeos moviéndose** | 3 moviéndose |
+> | Reducir movimiento OFF | 2 moviéndose | 3 moviéndose |
+>
+> "Reducir movimiento" se sigue respetando para todo lo que es DECORACIÓN
+> (paralaje, entrada de las piezas, suavizado del scroll, el nombre
+> escribiéndose letra a letra). Lo que ya no hace es callar el contenido: en
+> un portfolio de un videógrafo, los vídeos mudos en bucle son la obra, no un
+> adorno.
+>
+> El resto del documento es la historia de cómo se llegó hasta aquí. Se deja
+> entera porque los arreglos de las rondas 1-8 son reales y siguen puestos:
+> resolvían atascos de ancho de banda y abortos de `play()` que también
+> existían, pero que por sí solos no eran lo que dejaba la pantalla quieta.
+
 Documento de traspaso. Escrito el 2026-08-19 tras varias rondas de arreglos que no
 han resuelto el problema del todo. El dueño del proyecto (Alberto) va a probar con
 otra IA/sesión y necesita contexto completo sin tener que repetir todo el proceso.

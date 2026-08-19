@@ -435,11 +435,34 @@
     candidatos.sort((a, b) => prioridad(a.p.video, a.dist, vh) - prioridad(b.p.video, b.dist, vh));
     candidatos.forEach((c, i) => {
       const v = c.p.video;
-      const debe = i < maxJugando && !reduceMovimiento && !S.visorAbierto;
+      /* OJO con lo que NO pone aquí: antes esta línea llevaba también
+         `&& !reduceMovimiento`, y era una de las dos formas que había de
+         que no se reprodujera nada en el móvil sin ningún error por
+         ninguna parte. Si el iPhone tiene "Reducir movimiento" activado
+         (Ajustes → Accesibilidad → Movimiento), `debe` salía SIEMPRE
+         falso: los vídeos se descargaban enteros, se veía su póster, al
+         tocarlos se abrían y se reproducían bien... pero la rejilla no
+         daba nunca la orden de arrancar. En un Mac sin esa opción puesta
+         no se reproducía jamás, y por eso ninguna prueba lo cazó.
+
+         "Reducir movimiento" pide que no haya animación DECORATIVA, y eso
+         se sigue respetando al pie de la letra: nada de paralaje, ni de
+         entrada de las piezas, ni de suavizado del scroll, ni del nombre
+         escribiéndose letra a letra (ver el resto de usos de
+         reduceMovimiento en este archivo). Pero los vídeos de la rejilla
+         no son decoración: son el contenido de un portfolio de un
+         videógrafo, mudos y en bucle. Silenciarlos del todo dejaba la web
+         sin nada que enseñar. */
+      const debe = i < maxJugando && !S.visorAbierto;
       c.p.debe = debe;
       if (debe) reproducir(v);
       else pausar(v);
     });
+
+    if (typeof DEPURAR !== "undefined" && DEPURAR.activo) {
+      DEPURAR.estado("en pantalla:" + candidatos.length + "  plazas:" + maxJugando +
+                     "  visor:" + (S.visorAbierto ? "sí" : "no"));
+    }
   }
 
   /* Desbloqueo al primer gesto — la red de seguridad definitiva.
@@ -515,6 +538,57 @@
       }
       p.ultimoT = v.currentTime;
     }
+
+    rescatar();
+  }
+
+  /* RESCATE — la última red, y la única que no se fía de nada nuestro.
+
+     Todo el reparto de plazas se apoya en `oy`/`oh`, unas medidas que
+     tomamos nosotros al montar la rejilla, y en un desplazamiento virtual
+     que llevamos a mano. Si cualquiera de esas cuentas se descuadra (una
+     remedida a destiempo, un cambio de altura de la barra de Safari en
+     mitad del montaje…), la rejilla puede creer sinceramente que NINGUNA
+     pieza está en pantalla, y entonces no manda reproducir nada. No hay
+     error, no hay aviso: simplemente no pasa nada, que es exactamente lo
+     que se veía en el móvil.
+
+     Esto lo comprueba desde fuera: si no hay ni un vídeo moviéndose, se
+     pregunta al navegador dónde están las piezas DE VERDAD
+     (getBoundingClientRect, que no depende de ninguna cuenta nuestra) y se
+     arranca a mano el que esté más centrado y ya tenga datos. */
+  function rescatar() {
+    if (S.visorAbierto) return;
+    const alguno = S.piezas.some((p) => p.video && !p.video.paused && p.video.currentTime > 0);
+    if (alguno) return;
+
+    const vh = S.vh;
+    const listos = [];
+    for (const p of S.piezas) {
+      const v = p.video;
+      if (!v || v.readyState < 2) continue;        // sin datos no hay nada que hacer
+      const r = p.el.getBoundingClientRect();
+      if (r.bottom <= 0 || r.top >= vh) continue;  // no se ve
+      listos.push({ v, dist: Math.abs(r.top + r.height / 2 - vh / 2) });
+    }
+    if (!listos.length) return;
+
+    /* Si hemos llegado hasta aquí es que nuestras medidas no cuadran con lo
+       que el navegador dice de verdad, así que se vuelven a tomar. Es
+       barato y no toca el DOM (no destruye vídeos a medio descargar). */
+    medir();
+
+    const plazas = esMovil() ? CONFIG.scroll.autoplayMovil : CONFIG.scroll.autoplayEscritorio;
+    listos.sort((a, b) => a.dist - b.dist);
+    listos.slice(0, plazas).forEach(({ v }) => {
+      // Marca de rescate: durante unos segundos, este vídeo manda sobre el
+      // reparto normal (ver pausar() en rejilla.js). Si hemos tenido que
+      // rescatarlo es justamente porque el reparto se está equivocando, y
+      // sin esto volvería a pausarlo en la siguiente pasada.
+      v.dataset.rescatado = String(Date.now());
+      reproducir(v);
+    });
+    if (typeof DEPURAR !== "undefined") DEPURAR.rescates++;
   }
   setInterval(vigilar, 1500);
 

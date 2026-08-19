@@ -209,6 +209,12 @@ function pausar(video) {
      pausar, el usuario no llega a ver moverse nada nunca. */
   const desde = +video.dataset.desde || 0;
   if (desde && Date.now() - desde < GRACIA_ARRANQUE) return;
+  /* Un vídeo arrancado por el rescate de app.js manda sobre el reparto
+     normal durante unos segundos: si se ha llegado a rescatarlo es
+     precisamente porque el reparto se estaba equivocando al decidir qué se
+     ve y qué no, y dejarle pausarlo otra vez sería volver al principio. */
+  const rescatado = +video.dataset.rescatado || 0;
+  if (rescatado && Date.now() - rescatado < 4000) return;
   video.autoplay = false;   // que el motor no lo rearranque por su cuenta
   video.pause();
 }

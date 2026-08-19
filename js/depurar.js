@@ -38,9 +38,15 @@ var DEPURAR = (function () {
 
   // Apagado: se devuelven funciones vacías para no tener que comprobar
   // "¿está encendido?" en cada sitio desde donde se llama.
-  if (!activo) return { activo: false, apunta: function () {} };
+  if (!activo) return { activo: false, apunta: function () {}, estado: function () {}, rescates: 0 };
 
   const registro = [];   // últimos avisos, los más nuevos arriba
+  let resumen = "";      // lo que la rejilla dice de sí misma (ver estado())
+
+  // La rejilla llama aquí en cada reparto para contar en qué se basó al
+  // decidir. Sin esto, un "no se reproduce nada" no distingue entre "la
+  // rejilla no ve ninguna pieza en pantalla" y "las ve pero no arrancan".
+  function estado(texto) { resumen = texto; }
 
   function apunta(video, texto) {
     const n = video && video.dataset ? (video.dataset.dep || "?") : "?";
@@ -96,6 +102,10 @@ var DEPURAR = (function () {
         "  con fuente:" + conFuente.length +
         "  MOVIÉNDOSE:" + andando.length +
         "  ancho:" + window.innerWidth + "x" + window.innerHeight,
+      "reduce-motion:" +
+        (window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "SÍ" : "no") +
+        "  rescates:" + api.rescates +
+        (resumen ? "  " + resumen : ""),
       "",
       ...conFuente.slice(0, 10).map((v) => fila(v, v.dataset.dep)),
       "",
@@ -115,5 +125,6 @@ var DEPURAR = (function () {
     arrancar();
   }
 
-  return { activo: true, apunta: apunta };
+  const api = { activo: true, apunta: apunta, estado: estado, rescates: 0 };
+  return api;
 })();
