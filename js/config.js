@@ -10,10 +10,34 @@ const CONFIG = {
   contacto: {
     email: "Isiglez01@gmail.com",
     telefono: "+34 637 17 75 24",
-    ciudad: "Madrid, España",
+    ciudad: "Málaga, España",
     instagram: "https://www.instagram.com/isiigonzalez_/",
     vimeo: "",
     youtube: "",
+
+    /* FORMULARIO DE CONTACTO — para que los mensajes lleguen al correo.
+       ---------------------------------------------------------------
+       Mientras esto esté vacío, el formulario sigue funcionando pero
+       abriendo la aplicación de correo del visitante con el mensaje ya
+       escrito. Funciona, pero se pierden muchos: quien usa el correo desde
+       el navegador no tiene ninguna app que abrir y se queda a medias.
+
+       Para que el mensaje llegue solo, sin que el visitante tenga que hacer
+       nada más que darle a Enviar (2 minutos, gratis, sin crear cuenta):
+
+         1. Entra en  https://web3forms.com
+         2. Escribe el correo donde quieres recibir los mensajes
+            (el de Isidro: Isiglez01@gmail.com) y dale a "Create Access Key".
+         3. A ESE correo le llega un email con una clave larga. Sólo tiene
+            que abrirlo y copiarla — no hay que registrarse ni poner tarjeta.
+         4. Pega la clave aquí abajo y publica (./actualizar.sh).
+
+       Cada mensaje llega a su bandeja con el asunto "Nuevo mensaje desde la
+       web", y respondiendo al correo le responde directamente al cliente. */
+    formulario: {
+      clave: "",
+      asunto: "Nuevo mensaje desde la web",
+    },
   },
 
   /* Si algún día sirves los vídeos desde un CDN (Cloudflare R2, Bunny…),

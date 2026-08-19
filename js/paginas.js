@@ -20,21 +20,7 @@
   set("[data-nombre]", CONFIG.nombre);
   set("[data-anio]", new Date().getFullYear());
 
-  // Formulario sin backend: compone un correo con los datos.
-  // Si prefieres recibirlo en tu bandeja sin abrir el cliente de correo,
-  // cambia el <form> por uno de Formspree / Basin y quita este bloque.
-  const form = document.querySelector(".formulario");
-  if (form) {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const d = new FormData(form);
-      const cuerpo =
-        `Nombre: ${d.get("nombre")}\n` +
-        `Email: ${d.get("email")}\n\n` +
-        `${d.get("mensaje")}`;
-      location.href =
-        `mailto:${c.email}?subject=${encodeURIComponent("Consulta desde la web — " + d.get("nombre"))}` +
-        `&body=${encodeURIComponent(cuerpo)}`;
-    });
-  }
+  // El formulario de contacto vive en js/formulario.js: envía de verdad al
+  // correo cuando hay clave configurada, y si no, abre la aplicación de
+  // correo del visitante como plan B.
 })();

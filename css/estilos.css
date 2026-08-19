@@ -498,6 +498,13 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 .campo input:focus,
 .campo textarea:focus { outline: none; border-bottom-color: var(--ink); }
 
+/* Respuesta al enviar el formulario (ver js/formulario.js). Vacío no ocupa
+   sitio, así que el botón no da un salto cuando aparece el mensaje. */
+.aviso-formulario { margin: 0; color: var(--muted); }
+.aviso-formulario:empty { display: none; }
+.aviso-formulario[data-tipo="bien"] { color: var(--accent); font-weight: 600; }
+.formulario button[disabled] { opacity: 0.5; cursor: progress; }
+
 /* ---------- Carga inicial ---------- */
 .cortina {
   position: fixed;

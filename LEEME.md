@@ -15,6 +15,39 @@ El botón **Filtrar** de abajo lleva de una a otra en todas las páginas.
 
 ---
 
+## 0. Añadir vídeos o fotos — un solo comando
+
+Para el día a día sólo hace falta esto:
+
+1. Metes los archivos nuevos en `videos/CATEGORIA/` (o `fotos/CATEGORIA/`).
+2. En la terminal, dentro de esta carpeta:
+
+```bash
+./actualizar.sh
+```
+
+Y ya está. El script comprime lo nuevo, saca las miniaturas, regenera
+`js/datos.js`, sube a Cloudflare **sólo lo que falta**, publica, y espera a
+comprobar que la web ya está sirviendo el contenido nuevo antes de darte el OK.
+Si algo falla, te dice qué y en qué paso.
+
+```bash
+./actualizar.sh --probar          # hace todo menos publicar y lo abre en local
+./actualizar.sh -m "Boda de Ana"  # mensaje propio en el historial
+```
+
+**Cuánto tarda.** Lo que manda es el tamaño del original: un clip 4K de cámara
+son ~900 MB y comprimirlo lleva de medio minuto a un minuto. Cuatro o cinco
+vídeos nuevos son unos 3–4 minutos, sin tener que estar delante. Todo lo demás
+(subida, publicación) son segundos. Lo ya procesado **no se vuelve a tocar**:
+añadir un vídeo a una carpeta de veinte sólo trabaja con ese.
+
+> Los pasos sueltos (`node generar-datos.mjs`, `./subir-r2.sh`) siguen
+> existiendo y están explicados más abajo, por si algún día hace falta
+> ejecutar sólo uno.
+
+---
+
 ## 1. Poner tus vídeos
 
 Mete los archivos en `videos/`, **en una carpeta por categoría**. El nombre de la
@@ -156,6 +189,32 @@ página muestra un «Sección en preparación» y no da error.
 
 Todo lo editable está en **`js/config.js`**: nombre, lema, email, teléfono,
 ciudad, redes y el comportamiento del scroll.
+
+### Que los mensajes del formulario lleguen al correo
+
+Tal cual está, el formulario **abre la aplicación de correo del visitante** con
+el mensaje ya escrito. Funciona, pero se pierden bastantes: quien usa el correo
+desde el navegador no tiene ninguna app que abrir y se queda a medias.
+
+Para que el mensaje llegue solo a la bandeja de Isidro — **2 minutos, gratis,
+sin crear ninguna cuenta**:
+
+1. Entra en <https://web3forms.com>.
+2. Escribe el correo donde quiere recibirlos (`Isiglez01@gmail.com`) y pulsa
+   **Create Access Key**.
+3. **A ese correo le llega un email con una clave larga.** Lo único que tiene
+   que hacer Isidro es abrirlo y pasártela. No hay que registrarse ni poner
+   tarjeta.
+4. Pega la clave en `js/config.js`, dentro de `contacto.formulario.clave`, y
+   lanza `./actualizar.sh`.
+
+A partir de ahí cada mensaje le llega con el asunto «Nuevo mensaje desde la
+web», y **respondiendo a ese correo le responde directamente al cliente**
+(va con `reply-to`). El plan gratuito da para 250 mensajes al mes.
+
+El formulario lleva un campo trampa invisible para robots, así que no hace falta
+captcha. Y si el servicio fallara o se agotara la cuota, vuelve solo al modo de
+antes en vez de dejar al visitante con un error.
 
 La biografía y los listados de servicios/equipo están directamente en
 `sobre-mi.html`, y el formulario en `contacto.html`.
