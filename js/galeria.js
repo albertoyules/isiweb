@@ -64,13 +64,9 @@
     } else {
       const v = document.createElement("video");
       v.className = "media";
-      v.muted = true;
-      v.loop = true;
-      v.playsInline = true;
-      v.setAttribute("playsinline", "");
-      v.setAttribute("webkit-playsinline", "");
-      v.preload = "none";
-      v.disablePictureInPicture = true;
+      // Silencio, bucle y reproducción dentro de la página: todo lo que iOS
+      // exige para dejar que un vídeo arranque solo (ver prepararVideo).
+      prepararVideo(v);
       // Igual que en la portada: el póster se pide cuando la pieza está
       // cerca (ver cargarPoster en revisar()), no de golpe con las 20-30
       // piezas de la página al abrirla — eso es lo que la atascaba en 4G.
@@ -176,7 +172,7 @@
           else pausar(v);
         } else {
           pausar(v);
-          if (lejos && v.src) { v.removeAttribute("src"); v.load(); el.dataset.debe = ""; }
+          if (lejos) { descargar(v); el.dataset.debe = ""; }
         }
       });
 
@@ -188,7 +184,10 @@
         cargando++;
       }
 
-      candidatos.sort((a, b) => a.dist - b.dist);
+      /* Igual que en la portada: el reparto de plazas usa prioridad(), no la
+         distancia pelada, para que un vídeo que ya se mueve no pierda su
+         plaza a mitad de arranque (ver rejilla.js). */
+      candidatos.sort((a, b) => prioridad(a.v, a.dist, vh) - prioridad(b.v, b.dist, vh));
       candidatos.forEach((c, i) => {
         const debe = i < maxJugando && !visorAbierto;
         c.el.dataset.debe = debe ? "1" : "";
@@ -196,6 +195,20 @@
         else pausar(c.v);
       });
     }
+
+    /* Desbloqueo al primer gesto: dentro de un toque, iOS permite play()
+       siempre. Red de seguridad por si el autoplay silencioso estuviera
+       bloqueado por alguna política o ajuste del navegador. Ver el mismo
+       bloque, explicado más largo, en js/app.js. */
+    let desbloqueado = false;
+    const desbloquear = () => {
+      if (desbloqueado) return;
+      desbloqueado = true;
+      revisar();   // llama a reproducir() DENTRO del gesto
+    };
+    ["pointerdown", "touchstart", "keydown", "wheel"].forEach((ev) => {
+      window.addEventListener(ev, desbloquear, { passive: true, capture: true });
+    });
 
     /* Safari limita los decodificadores simultáneos y algún vídeo se queda
        clavado en marcha. Aquí se comprueba y se reintenta — pero sólo si YA
@@ -207,7 +220,14 @@
     setInterval(() => {
       piezas.forEach((el) => {
         const v = el.querySelector("video");
-        if (!v || el.dataset.debe !== "1" || !v.src) return;
+        if (!v || v.dataset.debe !== "1") return;
+        // Debería sonar y ni siquiera tiene fuente (se quedó fuera del cupo
+        // de descargas y luego no se movió nada): se le da una.
+        if (!v.src) { cargar(v); return; }
+        // Un play() todavía en el aire no se toca: recargarle la fuente ahora
+        // lo abortaría, que es justo lo que había que dejar de hacer.
+        if (v.dataset.pendiente === "1") return;
+
         if (v.paused) { reproducir(v); return; }
         if (v.currentTime > 0) el.dataset.arrancado = "1";
         if (v.currentTime === +el.dataset.t) {
@@ -218,6 +238,7 @@
             v.removeAttribute("src"); v.load();
             v.src = src;
             v.dataset.pendiente = "";
+            v.dataset.ficha = "";
             reproducir(v);
             el.dataset.clavado = 0;
             el.dataset.arrancado = "";

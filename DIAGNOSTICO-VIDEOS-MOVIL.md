@@ -120,7 +120,75 @@ están puestos para que se pueda `git show <hash>` y ver el diff exacto.
    AbortError, vídeos reproduciéndose.** Pero esto sigue siendo el motor de
    escritorio, no un iPhone real — ver siguiente sección.
 
-## Estado actual (sin confirmar en el dispositivo real)
+8. **Ronda actual** — se dejó de perseguir UNA causa concreta y se rehízo la
+   capa de reproducción para que aguante aunque falle cualquiera de las
+   piezas. Cinco cambios, todos en `js/rejilla.js` salvo donde se indique:
+
+   - **Dos vías de arranque en vez de una.** `reproducir()` ya no depende
+     sólo de su `play()`: pone `autoplay` y el silencio en el elemento
+     ANTES de asignarle la fuente, así que el vídeo también puede arrancar
+     por el camino propio del navegador (el que existe justo para vídeos
+     mudos metidos en la página) sin pasar por ninguna promesa nuestra.
+     Tienen que fallar las dos vías para que se quede quieto.
+   - **El silencio, como atributo y no sólo como propiedad**
+     (`defaultMuted` / `setAttribute("muted")`). `video.load()` devuelve la
+     propiedad `muted` a su valor por defecto, que sin el atributo es
+     "con sonido" — y en iOS un vídeo con sonido no tiene permiso para
+     arrancar solo. Se llama a `load()` en varios sitios (al cargar y en el
+     vigilante), así que este agujero estaba abierto de verdad.
+   - **Se acabó el vaivén de plazas.** El reparto ya no va por distancia
+     pelada al centro: `prioridad()` da ventaja fuerte a los vídeos que ya
+     se están moviendo y a los que ya tienen datos. Antes la lista se
+     reordenaba doce veces por segundo y el mismo vídeo recibía play() y
+     pause() casi a la vez. Medido con Playwright + WebKit móvil y 900 ms
+     de latencia artificial en los .mp4: **antes 86 play() / 78 pause() /
+     8 AbortError durante el scroll; ahora 31 / 31 / 0.** Quieto sin tocar
+     nada: 3 play(), 0 pause(), 0 AbortError.
+   - **Se tapan las tres formas que quedaban de abortar un play() en
+     vuelo**: margen de gracia de 1,2 s antes de poder pausar algo recién
+     arrancado; `descargar()` no suelta la fuente de un vídeo con play()
+     pendiente (quitar el `src` y llamar a `load()` es justo lo que produce
+     el AbortError); y el vigilante tampoco lo recarga en ese estado.
+     Además, `pendiente` ya no se puede quedar clavado en "1" para siempre
+     si la promesa nunca contesta — hay un tope de 8 s.
+   - **Red de seguridad al primer gesto** (`js/app.js` y `js/galeria.js`):
+     en cuanto el usuario toca la pantalla por primera vez se vuelve a
+     repartir las plazas, y esas llamadas a `play()` salen ya desde dentro
+     del gesto, donde iOS las permite SIEMPRE. Si el autoplay silencioso
+     estuviera bloqueado por una política o un ajuste del navegador —la
+     única causa que no se puede descartar desde el código— esto lo
+     arregla en cuanto se toca la pantalla.
+
+   `CONFIG.scroll.autoplayMovil` sube de 2 a 3: con dos plazas y 4-6 piezas
+   a la vista en la rejilla de 2 columnas, cualquier movimiento cambiaba de
+   dueño las plazas constantemente.
+
+## Panel de diagnóstico en el propio móvil (`?depurar`)
+
+Ya NO hace falta el cable ni el Inspector Web para saber qué pasa. Se abre
+desde el iPhone:
+
+```
+https://isidrogonzalez.vercel.app/?depurar
+```
+
+Sale un panel negro arriba con una fila por vídeo. Sin `?depurar` en la URL
+el archivo `js/depurar.js` no hace absolutamente nada. Cómo leerlo:
+
+| Lo que se ve | Qué significa |
+|---|---|
+| `MOVIÉNDOSE: 3` y la `t` subiendo | va bien; si aun así no se ve moverse nada, el problema es visual (CSS), no de reproducción |
+| `-> NotAllowedError` | el navegador PROHÍBE el autoplay. No es la web: es una política o un ajuste del móvil. Al tocar la pantalla debería arrancar |
+| `-> AbortError` | alguien sigue cortando el play() a medias — quedaría algún camino sin tapar |
+| `rs0 ns2` para siempre | los datos no llegan: red o CDN |
+| `rs0 ns1` | la descarga ni siquiera ha empezado |
+| `err4` | ese archivo no se puede decodificar en ese móvil |
+| `SUENA` en vez de `mudo` | el vídeo perdió el silencio; iOS no le dejará arrancar |
+
+Esto convierte la siguiente prueba en el iPhone en algo de diez segundos, en
+vez de otra ronda de suposiciones.
+
+## Estado anterior (lo que había antes de la ronda 8)
 
 El usuario probó DESPUÉS del commit `632bfd7` volviendo a teclear el mismo
 comando manual en la consola:

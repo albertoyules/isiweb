@@ -54,6 +54,49 @@ function cargar(video) {
   video.preload = "auto";
   video.src = video.dataset.src;
   video.load();
+  if (typeof DEPURAR !== "undefined") DEPURAR.apunta(video, "cargar");
+}
+
+/* Deja un <video> de rejilla con TODO lo que iOS exige para poder arrancar
+   solo, sin sonido y dentro de la página (no a pantalla completa).
+
+   Ojo con la diferencia entre PROPIEDAD y ATRIBUTO: `v.muted = true` pone la
+   propiedad, pero el atributo `muted` del HTML es lo que define el valor por
+   defecto, y `video.load()` (que llamamos al asignar la fuente, y también el
+   vigilante al reintentar) devuelve la propiedad a ese valor por defecto. Sin
+   el atributo, un load() podía dejar el vídeo con sonido durante un instante,
+   y en iOS un vídeo con sonido NO tiene permiso para arrancar solo: play()
+   se deniega y se queda en el póster. `defaultMuted = true` es justo la forma
+   en JS de escribir ese atributo. */
+function prepararVideo(v) {
+  v.muted = true;
+  v.defaultMuted = true;
+  v.setAttribute("muted", "");
+  v.loop = true;
+  v.setAttribute("loop", "");
+  v.playsInline = true;
+  v.setAttribute("playsinline", "");
+  v.setAttribute("webkit-playsinline", "");
+  v.controls = false;
+  v.disablePictureInPicture = true;
+  v.preload = "none";
+
+  /* Arranque en cuanto hay imagen. El vigilante que repasa los vídeos lo
+     hace cada segundo y medio; esto reacciona en el instante exacto en que
+     el vídeo pasa a tener datos suficientes, que es cuando el navegador
+     está más dispuesto a dejarlo arrancar. `debe` lo marca la rejilla: es
+     "este vídeo tiene ahora mismo una de las plazas de reproducción". */
+  const alHaberDatos = () => { if (v.dataset.debe === "1") reproducir(v); };
+  v.addEventListener("loadeddata", alHaberDatos);
+  v.addEventListener("canplay", alHaberDatos);
+
+  /* Si el vídeo se para solo (iOS lo hace cuando anda justo de memoria o de
+     decodificadores) y debería seguir andando, se vuelve a poner en marcha
+     sin esperar al vigilante. */
+  v.addEventListener("pause", () => {
+    if (v.dataset.debe !== "1") return;
+    setTimeout(() => { if (v.dataset.debe === "1" && v.paused) reproducir(v); }, 300);
+  });
 }
 
 /* Pide el póster sólo cuando hace falta (ver por qué en crearPieza, app.js
@@ -79,22 +122,134 @@ function cargarPoster(video) {
    Estas dos funciones llevan la cuenta de si hay un play() todavía en el
    aire (dataset.pendiente) y, mientras lo esté, ignoran cualquier orden de
    pausar — se deja que la promesa termine de resolverse antes de tocar el
-   vídeo otra vez. */
+   vídeo otra vez.
+
+   Además de eso, `reproducir` no se fía sólo de su propia llamada a play():
+   pone también `autoplay` en el elemento ANTES de asignarle la fuente. Así
+   quien arranca el vídeo es el propio motor del navegador, por su camino de
+   siempre (el que existe justo para vídeos sin sonido metidos en la página),
+   sin depender de que una promesa nuestra llegue a buen puerto. Si nuestro
+   play() se pierde por el camino, el motor lo arranca igual en cuanto tiene
+   datos. Y al revés. Con las dos vías puestas, hace falta que fallen las dos
+   para que el vídeo se quede quieto. */
+
+const ESPERA_MAX_PLAY = 8000;   // ms: si play() no contesta, se da por perdido
+const GRACIA_ARRANQUE = 1200;   // ms de margen antes de poder pausar algo recién arrancado
+reproducir.contador = 0;        // numera los intentos de play() (ver "ficha")
+
+/* `dataset.debe` guarda la INTENCIÓN ("este vídeo debería estar moviéndose
+   ahora mismo"), y la escriben sólo reproducir() y pausar(). Así los avisos
+   del propio navegador saben distinguir un vídeo que se ha parado solo —que
+   hay que rearrancar— de uno que hemos parado nosotros a propósito.
+
+   Escribir un atributo con el valor que ya tenía sigue costando trabajo al
+   navegador, y esto se llama muchas veces por segundo sobre decenas de
+   vídeos: sólo se toca cuando de verdad cambia. */
+function marcarDebe(video, valor) {
+  if (video.dataset.debe !== valor) video.dataset.debe = valor;
+}
+
 function reproducir(video) {
-  if (!video || video.dataset.pendiente === "1" || !video.paused) return;
+  if (!video) return;
+  marcarDebe(video, "1");
+  if (video.dataset.pendiente === "1") return;
+  if (!video.paused && !video.ended) return;
+
+  /* Antes de nada: fuente y permisos. El orden importa — `autoplay` y el
+     silencio tienen que estar puestos ANTES del load() que hay dentro de
+     cargar(), porque es en ese momento cuando el navegador decide si el
+     vídeo puede arrancar solo. */
+  video.muted = true;
+  video.defaultMuted = true;
+  video.autoplay = true;
+  if (!video.src && video.dataset.src) cargar(video);
+  if (!video.src) return;
+
+  /* Cada intento lleva su número. Si mientras una promesa está en el aire el
+     vigilante reinicia el vídeo y lanza un intento nuevo, la respuesta
+     tardía del intento viejo no debe tocar el estado del nuevo — miraría un
+     play() que ya no existe y lo daría por terminado antes de tiempo. */
+  const ficha = String(++reproducir.contador);
   video.dataset.pendiente = "1";
+  video.dataset.ficha = ficha;
+  video.dataset.desde = String(Date.now());
+
+  /* La promesa de play() puede quedarse colgada para siempre si los datos no
+     llegan nunca (en una 4G floja pasa). Sin este reloj, `pendiente` se
+     quedaría en "1" eternamente y el vídeo no volvería a aceptar NI un
+     play() NI un pause(): muerto para el resto de la sesión. */
+  let soltado = false;
+  const soltar = (motivo) => {
+    if (soltado) return;
+    soltado = true;
+    clearTimeout(reloj);
+    video.dataset.motivo = motivo;
+    if (typeof DEPURAR !== "undefined") DEPURAR.apunta(video, "play:" + motivo);
+    if (video.dataset.ficha !== ficha) return;   // ya hay un intento más nuevo
+    video.dataset.pendiente = "";
+  };
+  const reloj = setTimeout(() => soltar("sin-respuesta"), ESPERA_MAX_PLAY);
+
   const promesa = video.play();
   if (promesa && promesa.then) {
-    promesa
-      .then(() => { video.dataset.pendiente = ""; })
-      .catch(() => { video.dataset.pendiente = ""; });
+    promesa.then(() => soltar("ok")).catch((e) => soltar((e && e.name) || "error"));
   } else {
-    video.dataset.pendiente = "";
+    soltar("ok");
   }
 }
+
 function pausar(video) {
-  if (!video || video.dataset.pendiente === "1" || video.paused) return;
+  if (!video) return;
+  marcarDebe(video, "");
+  if (video.paused) return;
+  if (video.dataset.pendiente === "1") return;
+  /* Margen de gracia: nunca cortamos un vídeo que acaba de arrancar. Aunque
+     play() ya haya resuelto, en iOS el primer fotograma tarda todavía un
+     poco más en salir; si justo en ese hueco la rejilla reordena y le manda
+     pausar, el usuario no llega a ver moverse nada nunca. */
+  const desde = +video.dataset.desde || 0;
+  if (desde && Date.now() - desde < GRACIA_ARRANQUE) return;
+  video.autoplay = false;   // que el motor no lo rearranque por su cuenta
   video.pause();
+}
+
+/* Suelta el archivo de un vídeo que ha quedado muy lejos, para no tener
+   media docena de vídeos ocupando memoria a la vez.
+
+   El detalle importante: quitar la fuente y llamar a load() ABORTA cualquier
+   play() que estuviera todavía en el aire, y eso es exactamente el
+   "AbortError" que dejaba los vídeos congelados en el póster. Da igual lo
+   lejos que esté la pieza: si tiene un play() pendiente no se toca, y ya se
+   descargará en la pasada siguiente (van doce por segundo, no se pierde
+   nada por esperar una). */
+function descargar(video) {
+  if (!video || !video.src) return;
+  if (video.dataset.pendiente === "1") return;
+  marcarDebe(video, "");
+  video.autoplay = false;
+  video.removeAttribute("src");
+  video.load();
+  video.dataset.motivo = "descargado";
+}
+
+/* Puntuación con la que la rejilla decide QUIÉN de los vídeos que se ven se
+   queda con una de las pocas plazas de reproducción simultánea.
+   Menos es mejor. Parte de la distancia al centro de la pantalla, pero con
+   dos ventajas grandes que le dan estabilidad al reparto:
+
+   - Un vídeo que YA se está moviendo conserva su plaza mientras siga en
+     pantalla. Sin esto, la lista se reordenaba doce veces por segundo y el
+     mismo vídeo recibía play() y pause() casi a la vez, sin llegar a
+     arrancar. Este vaivén era el origen del problema en el móvil.
+   - Un vídeo que ya tiene datos descargados va por delante de uno que
+     todavía está bajando. Antes, dos vídeos a medio descargar ocupaban las
+     dos únicas plazas del móvil y dejaban fuera a otro que estaba listo
+     para reproducirse ya. */
+function prioridad(video, dist, vh) {
+  let p = dist;
+  if (video && !video.paused) p -= vh * 1.5;
+  if (video && video.readyState >= 2) p -= vh * 0.5;
+  return p;
 }
 
 /* Estados del reproductor: mientras carga muestra un giro, y si falla dice

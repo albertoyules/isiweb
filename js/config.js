@@ -49,7 +49,13 @@ const CONFIG = {
     olvido: 6.0,        // pantallas de distancia a las que se suelta el archivo
     descargasALaVez: 6, // descargas simultáneas como mucho
     descargasALaVezMovil: 4,
-    autoplayMovil: 2,   // nº máximo de vídeos reproduciéndose a la vez en móvil
+    /* Nº máximo de vídeos reproduciéndose a la vez en móvil. Estaba en 2, y
+       en una rejilla de 2 columnas se ven 4-6 piezas: con sólo dos plazas,
+       cualquier movimiento del scroll hacía que las plazas cambiasen de
+       dueño constantemente y ningún vídeo llegaba a arrancar. Con 3 hay
+       margen suficiente para que el reparto se quede quieto, y sigue lejos
+       del límite de decodificadores de iOS. */
+    autoplayMovil: 3,
     autoplayEscritorio: 8,
   },
 };

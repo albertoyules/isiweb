@@ -81,13 +81,9 @@
     if (p.video) {
       const v = document.createElement("video");
       v.className = "media";
-      v.muted = true;
-      v.loop = true;
-      v.playsInline = true;
-      v.setAttribute("playsinline", "");
-      v.setAttribute("webkit-playsinline", "");
-      v.preload = "none";
-      v.disablePictureInPicture = true;
+      // Silencio, bucle y reproducción dentro de la página: todo lo que iOS
+      // exige para dejar que un vídeo arranque solo (ver prepararVideo).
+      prepararVideo(v);
       /* El póster NO se asigna aquí. Antes se ponía de golpe al construir
          cada pieza, así que con 46 piezas en pantalla (rejilla + clones) la
          página arrancaba pidiendo 20-30 imágenes A LA VEZ, nada más cargar,
@@ -420,11 +416,7 @@
         else pausar(p.video);
       } else {
         pausar(p.video);
-        if (lejos && p.video.src) {
-          p.video.removeAttribute("src");
-          p.video.load();
-          p.debe = false;
-        }
+        if (lejos) { descargar(p.video); p.debe = false; }
       }
     }
 
@@ -437,7 +429,10 @@
       cargando++;
     }
 
-    candidatos.sort((a, b) => a.dist - b.dist);
+    /* Reparto de las plazas de reproducción. NO por distancia pelada: ver
+       prioridad() en rejilla.js — los que ya se mueven y los que ya tienen
+       datos conservan la plaza, que es lo que evita el play/pause en bucle. */
+    candidatos.sort((a, b) => prioridad(a.p.video, a.dist, vh) - prioridad(b.p.video, b.dist, vh));
     candidatos.forEach((c, i) => {
       const v = c.p.video;
       const debe = i < maxJugando && !reduceMovimiento && !S.visorAbierto;
@@ -447,6 +442,25 @@
     });
   }
 
+  /* Desbloqueo al primer gesto — la red de seguridad definitiva.
+     Dentro de un toque o un gesto del usuario, iOS permite play() SIEMPRE,
+     sin excepciones ni políticas de por medio. Así que en cuanto el usuario
+     toca la pantalla por primera vez volvemos a repartir las plazas, y esas
+     llamadas a play() salen ya desde dentro del gesto. Si el autoplay
+     silencioso estuviera bloqueado por lo que sea (un ajuste del propio
+     Safari para este sitio, ahorro de datos, una política nueva de iOS),
+     este es el único momento en que se puede arreglar — y basta con que
+     ocurra una vez: a partir de ahí el elemento queda desbloqueado. */
+  let desbloqueado = false;
+  function desbloquear() {
+    if (desbloqueado) return;
+    desbloqueado = true;
+    actualizarMedios();   // llama a reproducir() DENTRO del gesto
+  }
+  ["pointerdown", "touchstart", "keydown", "wheel"].forEach((ev) => {
+    window.addEventListener(ev, desbloquear, { passive: true, capture: true });
+  });
+
   /* Vigilante: Safari limita cuántos vídeos puede decodificar a la vez y
      alguno se queda clavado en el primer fotograma. Cada segundo y medio
      comprobamos que los que deberían moverse se están moviendo de verdad;
@@ -454,7 +468,16 @@
   function vigilar() {
     for (const p of S.piezas) {
       const v = p.video;
-      if (!v || !p.debe || !v.src) continue;
+      if (!v || v.dataset.debe !== "1") continue;
+
+      // Debería estar sonando pero ni siquiera tiene fuente: se le da una.
+      // Pasa cuando el cupo de descargas simultáneas le dejó fuera y, al
+      // no moverse nada después, nadie volvió a repartir.
+      if (!v.src) { cargar(v); continue; }
+
+      // Un play() todavía en el aire no se toca: recargarle la fuente ahora
+      // lo abortaría, que es justo lo que había que dejar de hacer.
+      if (v.dataset.pendiente === "1") continue;
 
       if (v.paused) { reproducir(v); continue; }
 
@@ -478,7 +501,10 @@
             v.removeAttribute("src");
             v.load();
             v.src = src;
-            v.dataset.pendiente = "";   // se reinicia del todo: no hay play() en vuelo
+            // Se reinicia del todo: no hay play() en vuelo, y la respuesta
+            // tardía del intento anterior queda invalidada (ver "ficha").
+            v.dataset.pendiente = "";
+            v.dataset.ficha = "";
             reproducir(v);
             p.clavado = 0;
             p.arrancado = false;
