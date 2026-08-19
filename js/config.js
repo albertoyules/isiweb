@@ -35,7 +35,7 @@ const CONFIG = {
        Cada mensaje llega a su bandeja con el asunto "Nuevo mensaje desde la
        web", y respondiendo al correo le responde directamente al cliente. */
     formulario: {
-      clave: "",
+      clave: "f6a0c3af-83c1-47f8-8777-ca77d85ce320",
       asunto: "Nuevo mensaje desde la web",
     },
   },
