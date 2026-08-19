@@ -17,6 +17,10 @@
   /* Aire entre piezas de una misma columna. Era 14vh fijo: en el móvil, con
      las piezas ya de por sí altísimas, se veía más fondo que vídeo. */
   --gap-fila: 8vh;
+  /* Aire al final de cada vuelta del bucle infinito. Ver .ciclo: sin esto,
+     la última fila de una vuelta y la primera de la siguiente se tocaban
+     con CERO separación, y era el único punto de toda la página sin aire. */
+  --gap-ciclo: 14vh;
 
   --font-display: "Playfair Display", "Didot", "Bodoni 72", "Times New Roman", serif;
   --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -26,10 +30,13 @@
 }
 
 @media (min-width: 992px) {
-  :root { --grid-space: 6vw; --gap-fila: 10vh; }
+  :root { --grid-space: 6vw; --gap-fila: 10vh; --gap-ciclo: 16vh; }
 }
 @media (max-width: 600px) {
-  :root { --grid-space: 3vw; --gap-fila: 5vh; }
+  /* El aire entre filas era 5vh (~33px). Con rótulos que ocupan dos líneas
+     ("REPLIK HAIR STUDIO") quedaba muy justo y las piezas parecían pegadas
+     unas a otras. 7vh (~47px) las separa sin que se vea más fondo que vídeo. */
+  :root { --grid-space: 3vw; --gap-fila: 7vh; --gap-ciclo: 12vh; }
 }
 
 /* ---------- Reset ---------- */
@@ -129,13 +136,29 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 
 .pista { position: absolute; top: 0; left: 0; width: 100%; }
 
-/* Cada clon del ciclo se apila absolutamente; JS los posiciona */
+/* Cada clon del ciclo se apila absolutamente; JS los posiciona.
+
+   EL PADDING DE ABAJO NO ES DECORACIÓN, ARREGLA UN SOLAPE. El bucle repite
+   el ciclo cada H píxeles, y H es justo la altura de este elemento. Como la
+   última rejilla terminaba exactamente en el borde de abajo, la primera fila
+   de la vuelta siguiente empezaba pegada a la última de la anterior: cero
+   separación, el único punto de toda la página sin aire, y los vídeos se
+   veían unidos unos con otros. Como los ciclos son position:absolute y los
+   coloca JS, ninguna regla normal de CSS puede meter margen ahí: tiene que
+   formar parte de la altura del propio ciclo, que es lo que hace este
+   padding (offsetHeight lo incluye, así que H crece con él y el clon
+   siguiente arranca ese hueco más abajo).
+
+   De paso deja holgura: si la medida de H se quedara corta por poco —una
+   remedida a destiempo al esconderse la barra de Safari, un rótulo que pasa
+   a dos líneas—, antes eso se convertía en solape directo porque no había
+   ni un píxel de margen. Ahora hay 12-16vh de colchón. */
 .ciclo {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  padding: 0 var(--grid-space);
+  padding: 0 var(--grid-space) var(--gap-ciclo);
 }
 
 /* --- Rejilla de 3 columnas --- */
