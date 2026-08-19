@@ -34,6 +34,10 @@
   function decir(texto, tipo) {
     aviso.textContent = texto;
     aviso.dataset.tipo = tipo || "";
+    /* En el móvil el aviso cae por debajo del botón, fuera de pantalla: se
+       enviaba el mensaje y el visitante no veía ninguna confirmación, así
+       que parecía que no había pasado nada. Se lo traemos a la vista. */
+    if (texto) aviso.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
   function ocupado(si) {
