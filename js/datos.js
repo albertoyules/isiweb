@@ -1,10 +1,10 @@
 /* =========================================================
    ARCHIVO GENERADO AUTOMÁTICAMENTE — no lo edites a mano.
    Regenéralo con:  node generar-datos.mjs
-   Generado: 2026-08-19 09:41
+   Generado: 2026-08-20 12:25
    ========================================================= */
 
-const MEDIA_V = "mszwjefn";
+const MEDIA_V = "mt1hu1gb";
 
 const PROYECTOS = [
   {
@@ -195,87 +195,189 @@ const PROYECTOS = [
 
 const FOTOS = [
   {
-    "titulo": "Partido 01",
+    "titulo": "Baloncesto 01",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2001.jpg",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2001.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Baloncesto 02",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2002.jpg",
+    "ar": "3059 / 2232"
+  },
+  {
+    "titulo": "Baloncesto 03",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2003.jpg",
+    "ar": "3433 / 2502"
+  },
+  {
+    "titulo": "Baloncesto 04",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2004.jpg",
+    "ar": "1427 / 2011"
+  },
+  {
+    "titulo": "Baloncesto 05",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2005.jpg",
+    "ar": "450 / 619"
+  },
+  {
+    "titulo": "Baloncesto 06",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2006.jpg",
+    "ar": "3999 / 2800"
+  },
+  {
+    "titulo": "Baloncesto 07",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2007.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Baloncesto 08",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2008.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Baloncesto 09",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2009.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Baloncesto 10",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Baloncesto/Baloncesto%2010.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Futbol 01",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2001.jpg",
     "ar": "842 / 1189"
   },
   {
-    "titulo": "Partido 02",
+    "titulo": "Futbol 02",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2002.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2002.jpg",
     "ar": "1087 / 1395"
   },
   {
-    "titulo": "Partido 03",
+    "titulo": "Futbol 03",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2003.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2003.jpg",
     "ar": "23 / 32"
   },
   {
-    "titulo": "Partido 04",
+    "titulo": "Futbol 04",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2004.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2004.jpg",
     "ar": "571 / 681"
   },
   {
-    "titulo": "Partido 05",
+    "titulo": "Futbol 05",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2005.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2005.jpg",
     "ar": "2222 / 1577"
   },
   {
-    "titulo": "Partido 06",
+    "titulo": "Futbol 06",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2006.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2006.jpg",
     "ar": "185 / 128"
   },
   {
-    "titulo": "Partido 07",
+    "titulo": "Futbol 07",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2007.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2007.jpg",
     "ar": "3 / 2"
   },
   {
-    "titulo": "Partido 08",
+    "titulo": "Futbol 08",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2008.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2008.jpg",
     "ar": "4075 / 2954"
   },
   {
-    "titulo": "Partido 09",
+    "titulo": "Futbol 09",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2009.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2009.jpg",
     "ar": "3 / 2"
   },
   {
-    "titulo": "Partido 10",
+    "titulo": "Futbol 10",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2010.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2010.jpg",
     "ar": "3 / 2"
   },
   {
-    "titulo": "Partido 11",
+    "titulo": "Futbol 11",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2011.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2011.jpg",
     "ar": "1349 / 1536"
   },
   {
-    "titulo": "Partido 12",
+    "titulo": "Futbol 12",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2012.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2012.jpg",
     "ar": "2 / 3"
   },
   {
-    "titulo": "Partido 13",
+    "titulo": "Futbol 13",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2013.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2013.jpg",
     "ar": "2673 / 4009"
   },
   {
-    "titulo": "Partido 14",
+    "titulo": "Futbol 14",
     "categoria": "Deportes",
-    "imagen": "fotos-web/DEPORTES/Partido%2014.jpg",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2014.jpg",
     "ar": "2439 / 3061"
+  },
+  {
+    "titulo": "Futbol 15",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2015.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Futbol 16",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2016.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Futbol 17",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Futbol/Futbol%2017.jpg",
+    "ar": "3 / 2"
+  },
+  {
+    "titulo": "Padel 01",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Padel/Padel%2001.jpg",
+    "ar": "2067 / 2984"
+  },
+  {
+    "titulo": "Padel 02",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Padel/Padel%2002.jpg",
+    "ar": "3701 / 5289"
+  },
+  {
+    "titulo": "Padel 03",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Padel/Padel%2003.jpg",
+    "ar": "611 / 853"
+  },
+  {
+    "titulo": "Padel 04",
+    "categoria": "Deportes",
+    "imagen": "fotos-web/DEPORTES/Padel/Padel%2004.jpg",
+    "ar": "5284 / 5807"
   }
 ];
