@@ -565,6 +565,19 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
    la página. Menos fotos por fila que caben en pantalla, pero cada una
    grande. */
 
+/* A tamaño de vitrina con sólo 2 columnas, en pantallas grandes cada foto
+   salía enorme (las apaisadas, a pantalla completa). Se reduce el ancho del
+   lienzo SOLO en escritorio, sin tocar columnas ni filas: sigue habiendo
+   las mismas piezas por fila, sólo que más pequeñas y centradas. Empezó en
+   el 50%; subido a 60% porque las verticales se quedaban un poco pequeñas.
+   El móvil no se toca (ahí nunca se pidió reducir). */
+@media (min-width: 901px) {
+  body[data-galeria="fotos"] .galeria {
+    max-width: 60%;
+    margin-inline: auto;
+  }
+}
+
 .vacio {
   text-align: center;
   color: var(--muted);
@@ -640,6 +653,40 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
   .fila-ancha .pieza,
   .fila-ancha.izq .pieza,
   .fila-ancha.der .pieza { grid-column: 1 / -1; }
+}
+
+/* En fotos las apaisadas ya no se colocan en grid a todo lo ancho: van
+   flotando a la izquierda, al centro o a la derecha por turnos (lo decide
+   JS, ver el "aleatorio" de construirRejilla) para que la página tenga
+   movimiento en vez de una fila pegada debajo de otra. El selector va con
+   el atributo del body delante para pesar más que las reglas de arriba
+   (incluidas las del @media de móvil) sin depender del orden en el
+   archivo — con eso ya nos mordimos una vez (ver el aviso de arriba). */
+@media (min-width: 901px) {
+  body[data-galeria="fotos"] .fila-ancha {
+    display: flex;
+  }
+  /* Un poco más grandes que la mitad del lienzo (lo que ocuparían dos de
+     las cuatro columnas "de referencia" que pidió Alberto), pero sin
+     llegar a todo el ancho como antes. Sólo se aplica a las apaisadas
+     sueltas: las que van de dos en dos (.doble, justo debajo) ya llenan el
+     lienzo entre las dos y no necesitan este límite. */
+  body[data-galeria="fotos"] .fila-ancha .pieza { width: 60%; }
+  body[data-galeria="fotos"] .fila-ancha.izq { justify-content: flex-start; }
+  body[data-galeria="fotos"] .fila-ancha.centro { justify-content: center; }
+  body[data-galeria="fotos"] .fila-ancha.der { justify-content: flex-end; }
+
+  /* Dos apaisadas seguidas: en vez de una sola al 60% con medio lienzo
+     vacío al lado, van una junto a la otra ocupando el ancho completo entre
+     las dos (ver volcarAncha en rejilla.js — con baloncesto/fútbol, que
+     traen tandas largas de apaisadas, el hueco de una sola se notaba
+     mucho). */
+  body[data-galeria="fotos"] .fila-ancha.doble {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--grid-space);
+  }
+  body[data-galeria="fotos"] .fila-ancha.doble .pieza { width: auto; }
 }
 
 /* Dos rejillas seguidas necesitan aire entre ellas */

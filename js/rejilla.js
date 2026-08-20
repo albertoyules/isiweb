@@ -433,8 +433,11 @@ function elegirCorte(lista) {
  * @param {Function} crearPieza (item, indiceGlobal) => elemento
  * @param {Number}   base       desplazamiento del índice global
  * @param {Number}   escritorio columnas en escritorio (ver columnasBase)
+ * @param {Boolean}   aleatorio  las piezas apaisadas alternan izq/centro/der
+ *                                en vez de sólo izq/der (ver .fila-ancha en
+ *                                el CSS) — sólo lo pide la página de fotos
  */
-function construirRejilla(items, crearPieza, base = 0, escritorio = 4, fijo = false) {
+function construirRejilla(items, crearPieza, base = 0, escritorio = 4, fijo = false, aleatorio = false) {
   const frag = document.createDocumentFragment();
   /* Las columnas ya no van escalonadas. El escalonado (0 / 11 / 4 vh) daba
      un aire editorial, pero como todas las piezas son verticales y de la
@@ -444,7 +447,35 @@ function construirRejilla(items, crearPieza, base = 0, escritorio = 4, fijo = fa
   const desfasesVh = [0, 0, 0];
   const GAP = 0.5;               // separación entre piezas, misma escala que h/w
   let cola = [];
+  let colaAncha = [];
   let ladoAncha = 0;
+
+  // Sólo en fotos (aleatorio=true): dos apaisadas seguidas comparten fila en
+  // vez de ir cada una en la suya. Antes cada apaisada abría su propia fila
+  // al 60% del lienzo con medio hueco vacío al lado — con baloncesto/fútbol,
+  // que traen tandas de varias apaisadas seguidas, ese hueco se notaba
+  // mucho. Si sólo queda una suelta (al cortarse la tanda), se queda como
+  // antes: sola, rotando izq/centro/der.
+  function volcarAncha() {
+    if (!colaAncha.length) return;
+    for (let idx = 0; idx < colaAncha.length; idx += 2) {
+      const par = colaAncha.slice(idx, idx + 2);
+      const fila = document.createElement("div");
+      fila.style.setProperty("--cols-base", columnasBase(escritorio));
+      if (par.length === 2) {
+        fila.className = "fila-ancha doble";
+        par.forEach(({ p, i }) => fila.appendChild(crearPieza(p, base + i)));
+      } else {
+        const lado = aleatorio
+          ? ["izq", "centro", "der"][ladoAncha++ % 3]
+          : (ladoAncha++ % 2 ? "der" : "izq");
+        fila.className = "fila-ancha " + lado;
+        fila.appendChild(crearPieza(par[0].p, base + par[0].i));
+      }
+      frag.appendChild(fila);
+    }
+    colaAncha = [];
+  }
 
   function volcarColumnas() {
     if (!cola.length) return;
@@ -496,20 +527,28 @@ function construirRejilla(items, crearPieza, base = 0, escritorio = 4, fijo = fa
 
   items.forEach((p, i) => {
     if (esApaisada(p)) {
-      volcarColumnas();                       // cerramos el bloque en curso
-      const fila = document.createElement("div");
-      fila.className = "fila-ancha " + (ladoAncha++ % 2 ? "der" : "izq");
-      // Con las mismas columnas de referencia que el resto del bloque: si no,
-      // una pieza apaisada acaba con un ancho fijo que no tiene nada que ver
-      // con el de sus vecinas verticales (ver el porqué largo en el CSS).
-      fila.style.setProperty("--cols-base", columnasBase(escritorio));
-      fila.appendChild(crearPieza(p, base + i));
-      frag.appendChild(fila);
+      if (aleatorio) {
+        volcarColumnas();                     // cerramos el bloque en curso
+        colaAncha.push({ p, i });
+      } else {
+        volcarColumnas();                     // cerramos el bloque en curso
+        const fila = document.createElement("div");
+        fila.className = "fila-ancha " + (ladoAncha++ % 2 ? "der" : "izq");
+        // Con las mismas columnas de referencia que el resto del bloque: si
+        // no, una pieza apaisada acaba con un ancho fijo que no tiene nada
+        // que ver con el de sus vecinas verticales (ver el porqué largo en
+        // el CSS).
+        fila.style.setProperty("--cols-base", columnasBase(escritorio));
+        fila.appendChild(crearPieza(p, base + i));
+        frag.appendChild(fila);
+      }
     } else {
+      volcarAncha();                          // cerramos la tanda de apaisadas en curso
       cola.push({ p, i });
     }
   });
 
+  volcarAncha();
   volcarColumnas();
   return frag;
 }

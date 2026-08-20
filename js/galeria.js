@@ -104,14 +104,17 @@
        se probó primero a estrechar la página entera y a poner MÁS
        columnas (5) para que hubiera menos scroll, pero el resultado se
        veía pequeño — Alberto las quiere grandes, a tamaño de vitrina, así
-       que ahora es al revés: menos columnas que el vídeo, no más. Las
-       piezas apaisadas (.fila-ancha) escalan solas con este mismo número
-       —lo fija --cols-base, ver el porqué en el CSS— así que con 2
-       columnas de fondo salen a todo el ancho, a juego con las
-       verticales. */
+       que ahora es al revés: menos columnas que el vídeo, no más.
+
+       El último "true" pide piezas apaisadas "aleatorias": en vez de sólo
+       izquierda/derecha alternas, van rotando izq/centro/der (ver
+       .fila-ancha en el CSS) para que la fila no se sienta siempre pegada
+       al mismo lado — es lo que pidió Alberto para dar movimiento a la
+       página. Sólo se activa aquí: el vídeo casi no tiene apaisadas (1 en
+       toda la web) y no merece la pena tocarle el patrón. */
     contenedor.appendChild(
       tipo === "fotos"
-        ? construirRejilla(items, crearPieza, 0, 2)
+        ? construirRejilla(items, crearPieza, 0, 2, false, true)
         : construirRejilla(unificarVerticales(items), crearPieza)
     );
   }
