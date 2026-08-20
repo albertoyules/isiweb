@@ -21,6 +21,12 @@
      la última fila de una vuelta y la primera de la siguiente se tocaban
      con CERO separación, y era el único punto de toda la página sin aire. */
   --gap-ciclo: 14vh;
+  /* Margen alrededor de cada foto/vídeo apaisado (.fila-ancha). Era 13vh fijo
+     pensado para vídeo, donde casi no hay piezas apaisadas (1 de 23) y no se
+     nota. En la página de fotos SÍ pesa: con deporte de acción hay muchas
+     fotos en horizontal (13 de 31), y 13vh arriba Y abajo de cada una era la
+     mitad del scroll de la página entera en eso solo. Bajado a la mitad. */
+  --gap-ancha: 7vh;
 
   --font-display: "Playfair Display", "Didot", "Bodoni 72", "Times New Roman", serif;
   --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -30,13 +36,13 @@
 }
 
 @media (min-width: 992px) {
-  :root { --grid-space: 6vw; --gap-fila: 10vh; --gap-ciclo: 16vh; }
+  :root { --grid-space: 6vw; --gap-fila: 10vh; --gap-ciclo: 16vh; --gap-ancha: 8vh; }
 }
 @media (max-width: 600px) {
   /* El aire entre filas era 5vh (~33px). Con rótulos que ocupan dos líneas
      ("REPLIK HAIR STUDIO") quedaba muy justo y las piezas parecían pegadas
      unas a otras. 7vh (~47px) las separa sin que se vea más fondo que vídeo. */
-  :root { --grid-space: 3vw; --gap-fila: 7vh; --gap-ciclo: 12vh; }
+  :root { --grid-space: 3vw; --gap-fila: 7vh; --gap-ciclo: 12vh; --gap-ancha: 5vh; }
 }
 
 /* ---------- Reset ---------- */
@@ -164,12 +170,13 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 /* --- Rejilla de 3 columnas --- */
 .rejilla {
   display: grid;
-  /* --cols lo fija JS: 3 en escritorio, 2 por debajo de 900px, y una menos
-     cuando así cuadra el número de piezas del bloque (ver elegirColumnas).
+  /* --cols lo fija JS: 4 en escritorio para vídeo (5 para fotos, ver
+     crearRejilla en galeria.js), 2 por debajo de 900px, y una menos cuando
+     así cuadra el número de piezas del bloque (ver elegirColumnas).
      Aquí NO se sobreescribe con !important: si el CSS pusiera un número
      distinto del que usó JS para repartir, las columnas sobrantes caerían a
      una fila nueva y dejarían medio ancho de pantalla vacío. */
-  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
   gap: var(--grid-space);
   align-items: start;
 
@@ -178,8 +185,8 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
      tanda de 4 vídeos en 2 columnas tiene EL MISMO tamaño de pieza que las
      tandas de 3 columnas, en vez de verse el doble de grande. */
   width: calc(
-    var(--cols, 3) * (100% - (var(--cols-base, 3) - 1) * var(--grid-space)) / var(--cols-base, 3)
-    + (var(--cols, 3) - 1) * var(--grid-space)
+    var(--cols, 4) * (100% - (var(--cols-base, 4) - 1) * var(--grid-space)) / var(--cols-base, 4)
+    + (var(--cols, 4) - 1) * var(--grid-space)
   );
   margin-inline: auto;
 }
@@ -550,6 +557,22 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 
 .galeria { padding-bottom: 6vh; }
 
+/* La página de fotos, sólo en escritorio, se centra en un ancho más
+   estrecho que el resto del sitio. Es la palanca que de verdad acorta el
+   scroll de las fotos: el número de columnas no ayudaba tanto como
+   parecía, porque con tantas fotos en horizontal (deporte de acción) las
+   verticales nunca llegan a juntarse cinco seguidas entre medio — así que
+   en la práctica seguían saliendo con 4 columnas, igual que los vídeos.
+   Estrechando el lienzo entero, cada pieza (las de columna Y las
+   apaisadas) encoge en la misma proporción, sea cual sea su tipo. */
+body[data-galeria="fotos"] .galeria {
+  max-width: 950px;
+  margin-inline: auto;
+}
+@media (min-width: 1400px) {
+  body[data-galeria="fotos"] .galeria { max-width: 1150px; }
+}
+
 .vacio {
   text-align: center;
   color: var(--muted);
@@ -594,18 +617,30 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--grid-space);
-  margin: 13vh 0;
+  margin: var(--gap-ancha) 0;
 }
 .fila-ancha.izq .pieza { grid-column: 1 / span 2; }
 .fila-ancha.der .pieza { grid-column: 2 / span 2; }
 
 @media (max-width: 900px) {
   .fila-ancha { grid-template-columns: minmax(0, 1fr); }
-  .fila-ancha .pieza { grid-column: 1 / -1; }
+  /* OJO: hace falta repetir el selector con .izq/.der explícitos, con la
+     MISMA especificidad que las reglas de escritorio de arriba
+     (.fila-ancha.izq .pieza / .fila-ancha.der .pieza, 3 clases). Un simple
+     ".fila-ancha .pieza" (2 clases) NO les gana aunque vaya después en el
+     archivo y esté dentro de este @media: en CSS la especificidad manda
+     sobre el orden. Sin este apaño, en el móvil las fotos apaisadas del
+     lado "der" seguían heredando "grid-column: 2 / span 2" del escritorio,
+     y como el grid móvil sólo tiene una columna, ese "span 2" las metía en
+     una columna implícita casi vacía: se veían minúsculas, aplastadas a un
+     lado. Encontrado con las fotos de baloncesto/fútbol nuevas. */
+  .fila-ancha .pieza,
+  .fila-ancha.izq .pieza,
+  .fila-ancha.der .pieza { grid-column: 1 / -1; }
 }
 
 /* Dos rejillas seguidas necesitan aire entre ellas */
-.rejilla + .rejilla { margin-top: 13vh; }
+.rejilla + .rejilla { margin-top: var(--gap-ancha); }
 
 
 /* Estados del reproductor: cargando y error */

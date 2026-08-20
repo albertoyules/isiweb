@@ -62,10 +62,37 @@ uno lleva ~45 s y el cuello es **descodificar**, no codificar.
 ### La rejilla y el número de piezas
 
 La rejilla cierra a ras cuando cada bloque de vídeos verticales tiene un número
-de piezas que cuadra con las columnas (3 en escritorio, 2 en móvil). Los bloques
-los separan el nombre grande y los vídeos apaisados. **Múltiplos de 6 cuadran
-con las dos cosas a la vez.** Si no cuadra, el bloque se pinta con 2 columnas
-estrechado y centrado, para que las piezas midan lo mismo que las demás.
+de piezas que cuadra con las columnas (4 en escritorio, 2 en móvil — antes eran
+3/2, subido para que el vídeo ocupe menos y se scrollee más rápido en PC).
+Los bloques los separan el nombre grande y los vídeos apaisados. **Múltiplos de
+4 cuadran con las dos cosas a la vez.** Si no cuadra, el bloque se pinta con
+menos columnas, estrechado y centrado, para que las piezas midan lo mismo que
+las demás.
+
+Las fotos (`fotos.html`) usan sus propias reglas, pensadas para poder escanear
+muchas de un vistazo en vez de para lucir cada una a tamaño grande:
+**5 columnas en escritorio** (llamando a `construirRejilla(items, crearPieza, 0,
+5, true)` en `galeria.js` — el último `true` es "fijo": a diferencia del vídeo,
+NUNCA rebaja el número de columnas aunque el grupo no cuadre exacto, porque cada
+foto tiene su propia proporción y no hay "a ras" que perseguir), y la página
+entera se acota a `max-width: 950-1150px` centrado
+(`body[data-galeria="fotos"] .galeria` en el CSS) — es lo que de verdad acorta
+el scroll: con deporte de acción hay muchas fotos en horizontal, y esas nunca
+llegan a juntar 5 verticales seguidas entre medio, así que el número de columnas
+por sí solo apenas se nota. El móvil de fotos no cambia: sigue en 2, igual que
+el vídeo (`columnasBase()` deja el móvil fijo pase lo que pase).
+
+**Ojo con `.fila-ancha` (las piezas apaisadas) en el CSS.** Tiene reglas de
+escritorio con dos clases de especificidad (`.fila-ancha.izq .pieza` /
+`.fila-ancha.der .pieza`) y una de móvil pensada para anularlas
+(`.fila-ancha .pieza { grid-column: 1 / -1 }` dentro de `@media (max-width:
+900px)`). Como esa regla de móvil sólo tiene DOS clases, pierde contra las de
+escritorio (TRES clases) aunque vaya después en el archivo y dentro del
+`@media`: **en CSS la especificidad manda sobre el orden**. Costó encontrarlo
+porque no daba ningún error: las fotos en horizontal del lado "der" salían
+minúsculas en el móvil, aplastadas en una columna casi vacía, con las otras
+bien. El apaño es repetir el selector con `.izq`/`.der` explícitos dentro del
+propio `@media` para igualar la especificidad.
 
 ---
 

@@ -337,10 +337,19 @@ function unificarVerticales(items) {
    2 columnas por debajo de 900px y 1 por debajo de 600px con !important,
    pero JS seguía repartiendo las piezas en 3 contenedores .columna: el
    tercero caía a una fila nueva y dejaba medio ancho de pantalla en blanco.
-   De ahí venían los huecos grandes en tableta y móvil. */
-function columnasBase() {
+   De ahí venían los huecos grandes en tableta y móvil.
+
+   El parámetro "escritorio" deja pedir más columnas (piezas más pequeñas,
+   menos scroll) sin tocar esta función en sí: la portada y las categorías
+   de vídeo usan el valor por defecto, y la página de fotos pide más (ver
+   crearRejilla en galeria.js) porque una foto de vitrina no necesita verse
+   tan grande como un vídeo, y con 31 fotos de golpe bajar de 3 a 3
+   columnas se hacía largo. El móvil no se toca: 2 columnas se veía bien
+   tanto en fotos como en vídeo, lo que fallaba ahí era otra cosa (ver el
+   apaño de .fila-ancha en el CSS). */
+function columnasBase(escritorio = 4) {
   const w = window.innerWidth;
-  return w < 900 ? 2 : 3;
+  return w < 900 ? 2 : escritorio;
 }
 
 /* Cuántas columnas usar para un grupo de g piezas.
@@ -349,18 +358,25 @@ function columnasBase() {
    altura y no queda ni un hueco. Si no lo es, se prueba con una columna
    menos antes de rendirse: mejor un bloque de dos columnas bien cerrado que
    uno de tres con la última fila coja. */
-function elegirColumnas(g) {
-  const base = columnasBase();
+function elegirColumnas(g, escritorio = 4, fijo = false) {
+  const base = columnasBase(escritorio);
   if (g <= 0) return base;
   if (g < base) return g;                       // 1 ó 2 piezas sueltas
+  /* La rebaja a "una columna menos si no cuadra" parte de que todas las
+     piezas comparten proporción (unificarVerticales, sólo vídeo): así una
+     columna de menos cierra a ras. En las fotos cada una tiene su propia
+     proporción — ya van escalonadas de por sí, cuadrar el número no evita
+     ningún diente — así que ahí se pide "fijo" y se respeta el número de
+     columnas pedido tal cual, sin rebajarlo nunca. */
+  if (fijo) return base;
   if (g % base === 0) return base;
   for (let c = base - 1; c >= 2; c--) if (g % c === 0) return c;
   return base;
 }
 
 // Piezas que sobran (las que dejarían una fila coja) con el mejor reparto.
-function sobra(g) {
-  const base = columnasBase();
+function sobra(g, escritorio = 4) {
+  const base = columnasBase(escritorio);
   if (g <= 0 || g < base) return 0;
   let mejor = g % base;
   for (let c = base - 1; c >= 2 && mejor > 0; c--) mejor = Math.min(mejor, g % c);
@@ -416,8 +432,9 @@ function elegirCorte(lista) {
  * @param {Array}    items      piezas a colocar
  * @param {Function} crearPieza (item, indiceGlobal) => elemento
  * @param {Number}   base       desplazamiento del índice global
+ * @param {Number}   escritorio columnas en escritorio (ver columnasBase)
  */
-function construirRejilla(items, crearPieza, base = 0) {
+function construirRejilla(items, crearPieza, base = 0, escritorio = 4, fijo = false) {
   const frag = document.createDocumentFragment();
   /* Las columnas ya no van escalonadas. El escalonado (0 / 11 / 4 vh) daba
      un aire editorial, pero como todas las piezas son verticales y de la
@@ -431,7 +448,7 @@ function construirRejilla(items, crearPieza, base = 0) {
 
   function volcarColumnas() {
     if (!cola.length) return;
-    const n = elegirColumnas(cola.length);
+    const n = elegirColumnas(cola.length, escritorio, fijo);
 
     const rejilla = document.createElement("div");
     rejilla.className = "rejilla";
@@ -440,7 +457,7 @@ function construirRejilla(items, crearPieza, base = 0) {
     // el CSS lo usa para estrechar el bloque en vez de estirar las piezas
     // (si no, un bloque de 2 columnas sale con los vídeos gigantes al lado
     // de los de 3).
-    rejilla.style.setProperty("--cols-base", columnasBase());
+    rejilla.style.setProperty("--cols-base", columnasBase(escritorio));
 
     const columnas = [];
     const alturas = [];

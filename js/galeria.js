@@ -100,8 +100,14 @@
     }
 
     // Sólo el vídeo se unifica; las fotos conservan su formato original.
+    // En escritorio las fotos van a más columnas que los vídeos (5 en vez
+    // de 4): una foto de vitrina no necesita verse tan grande como un
+    // vídeo, y con 30 y pico fotos de golpe el scroll se hacía eterno. El
+    // móvil no cambia (columnasBase() lo deja fijo en 2 pase lo que pase).
     contenedor.appendChild(
-      construirRejilla(tipo === "fotos" ? items : unificarVerticales(items), crearPieza)
+      tipo === "fotos"
+        ? construirRejilla(items, crearPieza, 0, 5, true)
+        : construirRejilla(unificarVerticales(items), crearPieza)
     );
   }
 
