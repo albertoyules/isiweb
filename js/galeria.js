@@ -99,15 +99,17 @@
       return;
     }
 
-    // Sólo el vídeo se unifica; las fotos conservan su formato original.
-    // En escritorio las fotos van a más columnas que los vídeos (5 en vez
-    // de 4): una foto de vitrina no necesita verse tan grande como un
-    // vídeo, y con 30 y pico fotos de golpe el scroll se hacía eterno. El
-    // móvil no cambia (columnasBase() lo deja fijo en 2 pase lo que pase).
+    /* Sólo el vídeo se unifica; las fotos conservan su formato original.
+       Mismo número de columnas que el vídeo (el "escritorio" por defecto de
+       construirRejilla): se probó a subirlo a 5 sólo para fotos, pero como
+       las verticales y las apaisadas comparten el mismo ancho de referencia
+       (--cols-base, ver el porqué en el CSS de .fila-ancha), subir sólo las
+       columnas de un lado sin tocar el otro dejaba las verticales
+       minúsculas al lado de las apaisadas. Lo que de verdad hace más
+       pequeñas las fotos que los vídeos es el ancho máximo de la página
+       (ver body[data-galeria="fotos"] .galeria en el CSS). */
     contenedor.appendChild(
-      tipo === "fotos"
-        ? construirRejilla(items, crearPieza, 0, 5, true)
-        : construirRejilla(unificarVerticales(items), crearPieza)
+      construirRejilla(tipo === "fotos" ? items : unificarVerticales(items), crearPieza)
     );
   }
 

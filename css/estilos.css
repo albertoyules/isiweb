@@ -612,15 +612,26 @@ body[data-galeria="fotos"] .galeria {
 .pagina .nav-paginas .pill--ghost { background: var(--bg); }
 
 
-/* --- Piezas apaisadas: rompen la rejilla y ocupan dos tercios --- */
+/* --- Piezas apaisadas: rompen la rejilla y ocupan dos columnas --- */
 .fila-ancha {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Las MISMAS columnas de referencia que el bloque de alrededor
+     (--cols-base, lo fija JS al crear la pieza — ver construirRejilla en
+     rejilla.js), no un 3 fijo como antes. Si no, el ancho de una pieza
+     apaisada no tiene relación ninguna con el de sus vecinas verticales: con
+     vídeo casi no se notaba (hay 4 columnas y sólo 1 vídeo apaisado en toda
+     la web), pero en fotos, con 5 columnas y 13 de 31 fotos en horizontal,
+     una vertical se veía minúscula al lado de una apaisada casi 3 veces más
+     ancha — así lo vio el propio Alberto en una captura suya. */
+  grid-template-columns: repeat(var(--cols-base, 4), minmax(0, 1fr));
   gap: var(--grid-space);
   margin: var(--gap-ancha) 0;
 }
 .fila-ancha.izq .pieza { grid-column: 1 / span 2; }
-.fila-ancha.der .pieza { grid-column: 2 / span 2; }
+/* "Las dos últimas columnas", sea cual sea --cols-base — con un número fijo
+   (antes "2 / span 2") esto sólo daba el resultado correcto para 3
+   columnas; con 4 o 5 dejaba una tira vacía a la derecha. */
+.fila-ancha.der .pieza { grid-column: span 2 / -1; }
 
 @media (max-width: 900px) {
   .fila-ancha { grid-template-columns: minmax(0, 1fr); }

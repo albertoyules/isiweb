@@ -499,6 +499,10 @@ function construirRejilla(items, crearPieza, base = 0, escritorio = 4, fijo = fa
       volcarColumnas();                       // cerramos el bloque en curso
       const fila = document.createElement("div");
       fila.className = "fila-ancha " + (ladoAncha++ % 2 ? "der" : "izq");
+      // Con las mismas columnas de referencia que el resto del bloque: si no,
+      // una pieza apaisada acaba con un ancho fijo que no tiene nada que ver
+      // con el de sus vecinas verticales (ver el porqué largo en el CSS).
+      fila.style.setProperty("--cols-base", columnasBase(escritorio));
       fila.appendChild(crearPieza(p, base + i));
       frag.appendChild(fila);
     } else {
