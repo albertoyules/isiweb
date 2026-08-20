@@ -5,7 +5,7 @@
 
 const CONFIG = {
   nombre: "Isidro González",
-  lema: "Videógrafo y director de fotografía.",
+  lema: "Videógrafo y fotógrafo.",
 
   contacto: {
     email: "Isiglez01@gmail.com",
