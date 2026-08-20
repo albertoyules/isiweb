@@ -69,17 +69,20 @@ Los bloques los separan el nombre grande y los vídeos apaisados. **Múltiplos d
 menos columnas, estrechado y centrado, para que las piezas midan lo mismo que
 las demás.
 
-Las fotos (`fotos.html`) usan las MISMAS columnas que el vídeo (el "escritorio"
-por defecto de `construirRejilla`, 4). Se probó a subirlas sólo para fotos (5,
-sin rebajar nunca aunque el grupo no cuadrase) pensando en escanear muchas de
-un vistazo, pero eso descuadraba `.fila-ancha` (ver más abajo): con deporte de
-acción hay muchas fotos en horizontal (13 de 31), y una apaisada calculada para
-3-4 columnas al lado de una vertical calculada para 5 se veía casi 3 veces más
-grande — una desproporción real que Alberto vio y hubo que revertir. Lo que de
-verdad hace más pequeñas las fotos que los vídeos es el ancho máximo de la
-página, `max-width: 950-1150px` centrado en `body[data-galeria="fotos"]
-.galeria` (CSS). El móvil de fotos no cambia: sigue en 2, igual que el vídeo
-(`columnasBase()` deja el móvil fijo pase lo que pase).
+Las fotos (`fotos.html`) van a **2 columnas en escritorio** (llamando a
+`construirRejilla(items, crearPieza, 0, 2)` en `galeria.js`), MENOS que el
+vídeo (4), no más. Hubo dos intentos previos en la dirección contraria — subir
+a 5 columnas, y luego estrechar la página entera a `max-width` — pensando en
+que cupieran muchas fotos de un vistazo y el scroll fuera corto. Los dos se
+revirtieron: a Alberto le parecían pequeñas, las quiere grandes, a tamaño de
+vitrina, aunque eso alargue el scroll. Si algún día se vuelve a pedir "que se
+vea más de golpe", la palanca es esta misma — subir el `2` de esa llamada — pero
+que quede claro que grande y corto de scrollear son objetivos contrapuestos en
+esta página, no se pueden maximizar los dos a la vez.
+
+El móvil de fotos no ha cambiado en todo este ir y venir: sigue en 2 columnas,
+igual que el vídeo (`columnasBase()` deja el móvil fijo pase lo que pase el
+"escritorio" que le llegue).
 
 **`.fila-ancha` (las piezas apaisadas) escala con `--cols-base`, no con un
 número fijo.** Antes tenía `grid-template-columns: repeat(3, ...)` a pelo, sin

@@ -557,21 +557,13 @@ button { font: inherit; color: inherit; background: none; cursor: pointer; }
 
 .galeria { padding-bottom: 6vh; }
 
-/* La página de fotos, sólo en escritorio, se centra en un ancho más
-   estrecho que el resto del sitio. Es la palanca que de verdad acorta el
-   scroll de las fotos: el número de columnas no ayudaba tanto como
-   parecía, porque con tantas fotos en horizontal (deporte de acción) las
-   verticales nunca llegan a juntarse cinco seguidas entre medio — así que
-   en la práctica seguían saliendo con 4 columnas, igual que los vídeos.
-   Estrechando el lienzo entero, cada pieza (las de columna Y las
-   apaisadas) encoge en la misma proporción, sea cual sea su tipo. */
-body[data-galeria="fotos"] .galeria {
-  max-width: 950px;
-  margin-inline: auto;
-}
-@media (min-width: 1400px) {
-  body[data-galeria="fotos"] .galeria { max-width: 1150px; }
-}
+/* Se probó a estrechar el lienzo de esta página para que las fotos
+   ocuparan menos y el scroll fuera más corto. Quitado: a Alberto le
+   parecían pequeñas — quiere las fotos grandes, a tamaño de vitrina, igual
+   que antes. Ahora la única diferencia con el vídeo es el número de
+   columnas (ver crearRejilla en galeria.js: 2 en vez de 4), no el ancho de
+   la página. Menos fotos por fila que caben en pantalla, pero cada una
+   grande. */
 
 .vacio {
   text-align: center;

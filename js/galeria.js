@@ -100,16 +100,19 @@
     }
 
     /* Sólo el vídeo se unifica; las fotos conservan su formato original.
-       Mismo número de columnas que el vídeo (el "escritorio" por defecto de
-       construirRejilla): se probó a subirlo a 5 sólo para fotos, pero como
-       las verticales y las apaisadas comparten el mismo ancho de referencia
-       (--cols-base, ver el porqué en el CSS de .fila-ancha), subir sólo las
-       columnas de un lado sin tocar el otro dejaba las verticales
-       minúsculas al lado de las apaisadas. Lo que de verdad hace más
-       pequeñas las fotos que los vídeos es el ancho máximo de la página
-       (ver body[data-galeria="fotos"] .galeria en el CSS). */
+       En escritorio las fotos van a 2 columnas (el vídeo se queda en 4):
+       se probó primero a estrechar la página entera y a poner MÁS
+       columnas (5) para que hubiera menos scroll, pero el resultado se
+       veía pequeño — Alberto las quiere grandes, a tamaño de vitrina, así
+       que ahora es al revés: menos columnas que el vídeo, no más. Las
+       piezas apaisadas (.fila-ancha) escalan solas con este mismo número
+       —lo fija --cols-base, ver el porqué en el CSS— así que con 2
+       columnas de fondo salen a todo el ancho, a juego con las
+       verticales. */
     contenedor.appendChild(
-      construirRejilla(tipo === "fotos" ? items : unificarVerticales(items), crearPieza)
+      tipo === "fotos"
+        ? construirRejilla(items, crearPieza, 0, 2)
+        : construirRejilla(unificarVerticales(items), crearPieza)
     );
   }
 
